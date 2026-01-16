@@ -17,9 +17,8 @@ const RewardsClient = () => {
     const progressPercentage = (data.progress / data.milestone) * 100;
     const animatedProgress = useAnimatedCounter(
         Math.round(progressPercentage),
-        isLoading
+        isLoading,
     );
-    // For progress number, we'll animate it separately since useAnimatedCounter formats as currency
     const [displayProgress, setDisplayProgress] = useState("0");
 
     useEffect(() => {
@@ -31,7 +30,7 @@ const RewardsClient = () => {
             ease: "expo.out",
             onUpdate: () => {
                 setDisplayProgress(
-                    Math.round(counter.value).toLocaleString("pt-BR")
+                    Math.round(counter.value).toLocaleString("pt-BR"),
                 );
             },
         });
@@ -43,7 +42,7 @@ const RewardsClient = () => {
     useRewardsAnimations(isLoading);
 
     useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 100);
+        const timer = setTimeout(() => setIsLoading(false), 50);
         return () => clearTimeout(timer);
     }, []);
 
@@ -61,29 +60,6 @@ const RewardsClient = () => {
             behavior: "smooth",
         });
     }, [data.currentLevel]);
-
-    // Animate border fills for completed items
-    useEffect(() => {
-        if (isLoading) return;
-
-        const completedCards = document.querySelectorAll(
-            ".milestone-card.completed, .achievement-card.completed, .reward-card.completed"
-        );
-
-        completedCards.forEach((card) => {
-            gsap.fromTo(
-                card,
-                {
-                    borderImageSlice: 0,
-                },
-                {
-                    borderImageSlice: 1,
-                    duration: 1.5,
-                    ease: "power2.out",
-                }
-            );
-        });
-    }, [isLoading]);
 
     if (isLoading) {
         return (
@@ -188,12 +164,12 @@ const RewardsClient = () => {
                                             el;
                                     }}
                                     className={twMerge(
-                                        "milestone-card opacity-0 min-w-32 sm:min-w-36 shrink-0 snap-center flex flex-col items-center border-gradient rounded-lg px-4 sm:px-5 py-4 gap-2 transition-all relative overflow-hidden border",
+                                        "milestone-card min-w-32 sm:min-w-36 shrink-0 snap-center flex flex-col items-center border-gradient rounded-lg px-4 sm:px-5 py-4 gap-2 transition-all relative overflow-hidden border",
                                         isCompleted
                                             ? "completed border-primary"
                                             : isCurrent
-                                            ? "border-primary/50"
-                                            : "border-foreground/20 opacity-60"
+                                              ? "border-primary/50"
+                                              : "border-foreground/20 opacity-60",
                                     )}
                                 >
                                     {isCompleted && (
@@ -202,7 +178,7 @@ const RewardsClient = () => {
                                     <div
                                         className={twMerge(
                                             "relative z-10 flex flex-col items-center gap-1",
-                                            isCompleted && "text-primary"
+                                            isCompleted && "text-primary",
                                         )}
                                     >
                                         <h6 className="text-sm sm:text-base font-semibold">
@@ -210,7 +186,7 @@ const RewardsClient = () => {
                                         </h6>
                                         <p className="font-bold text-lg sm:text-xl">
                                             {milestone.requiredPoints.toLocaleString(
-                                                "pt-BR"
+                                                "pt-BR",
                                             )}
                                         </p>
                                     </div>
@@ -226,8 +202,8 @@ const RewardsClient = () => {
                             const progressWidth = isCurrent
                                 ? progressPercentage
                                 : isCompleted
-                                ? 100
-                                : 0;
+                                  ? 100
+                                  : 0;
 
                             return [
                                 ...acc,
@@ -270,10 +246,10 @@ const RewardsClient = () => {
                                 <div
                                     key={achvement.name}
                                     className={twMerge(
-                                        "achievement-card opacity-0 border-gradient rounded-lg py-6 px-5 transition-all relative overflow-hidden group border",
+                                        "achievement-card border-gradient rounded-lg py-6 px-5 transition-all relative overflow-hidden group border",
                                         achvement.completed
-                                            ? "completed border-primary opacity-100"
-                                            : "border-foreground/20 opacity-100"
+                                            ? "completed border-primary"
+                                            : "border-foreground/20",
                                     )}
                                 >
                                     <div className="relative z-10">
@@ -281,7 +257,7 @@ const RewardsClient = () => {
                                             className={twMerge(
                                                 "font-semibold text-lg mb-2",
                                                 achvement.completed &&
-                                                    "text-primary"
+                                                    "text-primary",
                                             )}
                                         >
                                             {achvement.name}
@@ -304,10 +280,10 @@ const RewardsClient = () => {
                                     <div
                                         key={milestone.requiredPoints}
                                         className={twMerge(
-                                            "reward-card opacity-0 border-gradient rounded-lg py-6 px-5 transition-all relative overflow-hidden group border",
+                                            "reward-card border-gradient rounded-lg py-6 px-5 transition-all relative overflow-hidden group border",
                                             isUnlocked
-                                                ? "completed border-primary opacity-100"
-                                                : "border-foreground/20 opacity-60"
+                                                ? "completed border-primary"
+                                                : "border-foreground/20 opacity-60",
                                         )}
                                     >
                                         <div className="relative z-10 flex items-start justify-between gap-4">
@@ -316,7 +292,7 @@ const RewardsClient = () => {
                                                     className={twMerge(
                                                         "font-semibold text-lg mb-2",
                                                         isUnlocked &&
-                                                            "text-primary"
+                                                            "text-primary",
                                                     )}
                                                 >
                                                     Nível {milestone.level}
@@ -340,7 +316,7 @@ const RewardsClient = () => {
                                                     </p>
                                                     <p className="font-bold text-sm">
                                                         {milestone.requiredPoints.toLocaleString(
-                                                            "pt-BR"
+                                                            "pt-BR",
                                                         )}{" "}
                                                         pts
                                                     </p>
