@@ -72,9 +72,7 @@ const AppSidebar = () => {
                                             <Link href={item.url}>
                                                 <item.icon
                                                     weight={
-                                                        active
-                                                            ? "fill"
-                                                            : "regular"
+                                                        active ? "fill" : "bold"
                                                     }
                                                 />
                                                 <span>{item.title}</span>

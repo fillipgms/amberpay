@@ -34,136 +34,104 @@ export const useRewardsAnimations = (isLoading: boolean) => {
 
             gsap.set(animatedSelectors, { willChange: "transform, opacity" });
 
-            // Garantir que os cards comecem na posição correta antes da animação
-            gsap.set("#progressCard", { y: 0 });
-            gsap.set(".milestone-card", { y: 0 });
-            gsap.set(".achievement-card, .reward-card", { y: 0 });
-
-            // Title animation
             tl.from("#progressTitle", {
-                yPercent: 150,
+                y: 30,
                 opacity: 0,
-                duration: 0.8,
+                duration: 0.5,
                 force3D: true,
             })
-                // Progress card animation
                 .from(
                     "#progressCard",
                     {
                         opacity: 0,
-                        y: 30,
-                        duration: 0.6,
+                        y: 20,
+                        duration: 0.4,
                         force3D: true,
                     },
-                    "-=0.5"
+                    "-=0.3",
                 )
-                .to(
-                    "#progressCard",
-                    {
-                        y: 0,
-                        duration: 0,
-                    },
-                    ">"
-                )
-                // Progress bar fill animation
                 .from(
                     ".progress-bar-fill",
                     {
                         scaleX: 0,
                         transformOrigin: "left center",
-                        duration: 1.2,
-                        ease: "power3.out",
+                        duration: 0.8,
+                        ease: "power2.out",
                         force3D: true,
                     },
-                    "-=0.4"
+                    "-=0.2",
                 )
-                // Progress text animation
                 .from(
                     ".progress-text",
                     {
                         opacity: 0,
-                        y: 10,
-                        duration: 0.5,
-                        stagger: 0.1,
+                        duration: 0.3,
+                        stagger: 0.05,
                         force3D: true,
                     },
-                    "-=0.8"
+                    "-=0.5",
                 )
-                // Milestone cards animation
-                .from(".milestone-card", {
-                    opacity: 0,
-                    scale: 0.8,
-                    y: 20,
-                    duration: 0.6,
-                    ease: "back.out(1.2)",
-                    force3D: true,
-                })
-                .to(
+                .from(
                     ".milestone-card",
                     {
-                        opacity: 1,
-                        scale: 1,
-                        y: 0,
-                        duration: 0.6,
-                        stagger: 0.1,
-                        ease: "back.out(1.2)",
+                        opacity: 0,
+                        y: 15,
+                        duration: 0.4,
+                        stagger: 0.05,
+                        ease: "power2.out",
                         force3D: true,
                     },
-                    "-=0.6"
+                    "-=0.2",
                 )
-                // Milestone connector lines animation (going up)
+                .to(".milestone-card", {
+                    opacity: 1,
+                    y: 0,
+                    stagger: 0.05,
+                    ease: "power2.out",
+                    force3D: true,
+                })
                 .from(
                     ".milestone-connector",
                     {
                         scaleX: 0,
                         transformOrigin: "left center",
-                        duration: 0.8,
-                        stagger: 0.1,
+                        duration: 0.5,
+                        stagger: 0.05,
                         ease: "power2.out",
                         force3D: true,
                     },
-                    "-=0.4"
+                    "-=0.3",
                 )
-                // Achievement and reward cards
                 .from(
                     ".achievement-card, .reward-card",
                     {
                         opacity: 0,
-                        y: 20,
-                        scale: 0.95,
-                        duration: 0.5,
-                        stagger: 0.08,
+                        y: 15,
+                        duration: 0.4,
+                        stagger: 0.04,
                         ease: "power2.out",
                         force3D: true,
                     },
-                    "-=0.3"
+                    "-=0.2",
                 )
-                .to(
-                    ".achievement-card, .reward-card",
-                    {
-                        opacity: 1,
-                        y: 0,
-                        scale: 1,
-                        duration: 0.5,
-                        stagger: 0.08,
-                        ease: "power2.out",
-                        force3D: true,
-                    },
-                    "-=0.3"
-                )
-                // Glow effect
+                .to(".achievement-card, .reward-card", {
+                    opacity: 1,
+                    y: 0,
+                    stagger: 0.04,
+                    ease: "power2.out",
+                    force3D: true,
+                })
                 .from(
                     "#chartGlow",
                     {
                         opacity: 0,
-                        scale: 0.5,
-                        duration: 1.5,
+                        duration: 0.6,
                         ease: "power1.out",
                         force3D: true,
                     },
-                    "-=1.0"
+                    "-=0.5",
                 )
-                .set(animatedSelectors, { willChange: "auto" }, "-=0.1");
+                .set(animatedSelectors, { willChange: "auto" });
 
             timelineRef.current = tl;
         }, 16);

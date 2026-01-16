@@ -36,95 +36,84 @@ export const useDashboardAnimations = (isLoading: boolean) => {
 
             gsap.set(animatedSelectors, { willChange: "transform, opacity" });
 
-            // Garantir que os cards comecem na posição correta antes da animação
-            gsap.set(".dashboardCard", { y: 0 });
-
             tl.from("#saldo", {
-                yPercent: 150,
+                y: 30,
                 opacity: 0,
-                duration: 0.8,
+                duration: 0.5,
                 force3D: true,
             })
                 .from(
                     "#saldoBloqueado",
-                    { opacity: 0, y: 30, duration: 0.5, force3D: true },
-                    "-=0.5"
+                    { opacity: 0, y: 20, duration: 0.4, force3D: true },
+                    "-=0.3"
                 )
                 .from(
                     "#ultimaTransacao",
-                    { opacity: 0, y: 20, duration: 0.4, force3D: true },
-                    "-=0.3"
+                    { opacity: 0, y: 15, duration: 0.3, force3D: true },
+                    "-=0.2"
                 )
                 .from(
                     ".stat-card",
                     {
                         opacity: 0,
-                        y: 20,
-                        duration: 0.5,
-                        stagger: 0.15,
+                        y: 15,
+                        duration: 0.4,
+                        stagger: 0.08,
                         ease: "power2.out",
                         force3D: true,
                     },
-                    "-=0.4"
+                    "-=0.2"
                 )
                 .from(
                     ".dashboardCard",
                     {
                         opacity: 0,
-                        y: 30,
-                        stagger: 0.12,
-                        duration: 0.6,
+                        y: 20,
+                        stagger: 0.06,
+                        duration: 0.4,
                         force3D: true,
                     },
-                    "-=0.3"
-                )
-                .to(
-                    ".dashboardCard",
-                    {
-                        y: 0,
-                        duration: 0,
-                    },
-                    ">"
+                    "-=0.2"
                 )
                 .from(
                     "#growthTitle, #overviewTitle",
                     {
                         opacity: 0,
-                        y: 20,
-                        duration: 0.4,
-                        stagger: 0.1,
+                        y: 15,
+                        duration: 0.3,
+                        stagger: 0.05,
                         force3D: true,
                     },
-                    "-=0.5"
+                    "-=0.3"
                 )
                 .from(
                     "#growthOverview",
-                    { opacity: 0, y: 20, duration: 0.5, force3D: true },
-                    "-=0.3"
+                    { opacity: 0, y: 15, duration: 0.3, force3D: true },
+                    "-=0.2"
                 )
                 .from(
                     ".overviewLegend",
                     {
                         opacity: 0,
-                        y: 20,
-                        stagger: 0.15,
-                        duration: 0.5,
+                        y: 15,
+                        stagger: 0.08,
+                        duration: 0.3,
                         force3D: true,
                     },
-                    "-=0.4"
+                    "-=0.2"
                 )
                 .from(
                     ".metrics",
                     {
-                        x: -30,
+                        x: -20,
                         opacity: 0,
-                        stagger: 0.1,
-                        duration: 0.4,
+                        stagger: 0.05,
+                        duration: 0.3,
                         force3D: true,
                     },
-                    "-=0.3"
+                    "-=0.2"
                 )
-                .set(animatedSelectors, { willChange: "auto" }, "-=0.1");
+                .set(animatedSelectors, { willChange: "auto" });
 
             timelineRef.current = tl;
         }, 16);
