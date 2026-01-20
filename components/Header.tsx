@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
+import { PaperPlaneIcon, PaperPlaneTiltIcon } from "@phosphor-icons/react";
 
 const Header = () => {
     const [show, setShow] = useState(true);
@@ -43,14 +44,17 @@ const Header = () => {
         <header
             id="main-header"
             className={twMerge(
-                "py-5 px-8 flex items-center justify-between w-full border-b-gradient sticky! top-0 left-0 bg-background z-50"
+                "py-5 px-8 flex items-center justify-between w-full border-b-gradient sticky! top-0 left-0 bg-background z-50",
             )}
         >
             <div className="flex gap-4">
                 <SidebarTrigger />
                 <p>William Bowery</p>
             </div>
-            <Button>Chamar Gerente</Button>
+            <Button>
+                <PaperPlaneTiltIcon size={16} weight="fill" />
+                Chamar Gerente
+            </Button>
         </header>
     );
 };

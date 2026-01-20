@@ -34,6 +34,8 @@ import {
     DevicesIcon,
     GearIcon,
 } from "@phosphor-icons/react/dist/ssr";
+import DevicesModal from "./DevicesModal";
+import ConfigsModal from "./ConfigsModal";
 
 const items = [
     { title: "Dashboard", url: "/", icon: GridIcon },
@@ -100,17 +102,15 @@ const AppSidebar = () => {
                                 side="top"
                                 className="w-[--radix-popper-anchor-width]"
                             >
-                                <DropdownMenuItem>
-                                    <span className="flex items-center gap-2">
-                                        <GearIcon className="text-foreground" />
-                                        Configurações
-                                    </span>
+                                <DropdownMenuItem
+                                    onSelect={(e) => e.preventDefault()}
+                                >
+                                    <ConfigsModal />
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <span className="flex items-center gap-2">
-                                        <DevicesIcon className="text-foreground" />
-                                        Dispositivos
-                                    </span>
+                                <DropdownMenuItem
+                                    onSelect={(e) => e.preventDefault()}
+                                >
+                                    <DevicesModal />
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>
                                     <span className="flex items-center gap-2">

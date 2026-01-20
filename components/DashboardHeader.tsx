@@ -1,5 +1,8 @@
 import { memo } from "react";
 import { Button } from "@/components/ui/button";
+import ArrowsBoldOpositeDirection from "@/public/icons/arrows-bold-opposite-direction";
+import ArrowsOppositeDirection from "@/public/icons/arrows-opposite-direction";
+import WithdrawModal from "./WithdrawModal";
 
 interface DashboardHeaderProps {
     displayValue: string;
@@ -33,17 +36,20 @@ export const DashboardHeader = memo(
                         <h3 className="font-bold text-xl">R$ 6,27</h3>
                     </div>
                 </div>
-                <div className="flex gap-4">
-                    <Button className="action-button">
-                        Realizar Transferencia
-                    </Button>
-                    <Button className="action-button" variant="outline">
+                <div className="flex gap-4 flex-col md:flex-row">
+                    <WithdrawModal />
+                    <Button
+                        className="action-button"
+                        variant="outline"
+                        disabled
+                    >
+                        <ArrowsOppositeDirection className="text-foreground" />
                         Adicionar Saldo
                     </Button>
                 </div>
             </div>
         </section>
-    )
+    ),
 );
 
 DashboardHeader.displayName = "DashboardHeader";
