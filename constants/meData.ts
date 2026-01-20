@@ -1,0 +1,22 @@
+export const meData = {
+    name: "Fillip Gabriel Mangia da Silva",
+    email: "fillipgms@gmail.com",
+    cpfOrCnpj: "39235091896",
+    auto_approve_withdrawal: false,
+    enabled_withdraw: true,
+    enabled_deposit: true,
+    balance: "0,00",
+    fee: {
+        limit_withdrawal: "5,000,00",
+        limit_per_day_withdrawal_user: 100,
+        limit_per_day_withdrawal: 300,
+        minimum_withdrawal: "10,00",
+        minimum_deposit: "4,00",
+        max_deposit: "600,00",
+        max_deposit_per_day: 200000,
+        fee_percent_withdrawal: "3.00",
+        fee_percent_deposit: "3.00",
+        fee_percent_withdrawal_fixed: "5,00",
+        fee_fixed_deposit: "2,00",
+    },
+};
