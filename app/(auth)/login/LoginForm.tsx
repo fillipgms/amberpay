@@ -27,12 +27,12 @@ const LoginForm = () => {
         const formData = new FormData(e.target as HTMLFormElement);
         const result = await logIn(formData);
 
+        console.log("result from login:", result);
+
         if (result.success) {
             if (result.user) {
                 localStorage.setItem("user", JSON.stringify(result.user));
             }
-
-            console.log(result);
 
             if (result.requiresVerification && result.qrcode && result.token) {
                 router.push(
