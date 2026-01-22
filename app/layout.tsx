@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SessionProvider } from "@/contexts/sessionContext";
 
 const manrope = Manrope({
     variable: "--font-geist-sans",
@@ -21,15 +22,17 @@ export default function RootLayout({
     return (
         <html lang="pt-br" suppressHydrationWarning>
             <body className={`${manrope.variable} antialiased`}>
-                <ThemeProvider
-                    attribute="class"
-                    defaultTheme="dark"
-                    storageKey="amberpay-theme"
-                    enableSystem
-                    disableTransitionOnChange
-                >
-                    {children}
-                </ThemeProvider>
+                <SessionProvider>
+                    <ThemeProvider
+                        attribute="class"
+                        defaultTheme="dark"
+                        storageKey="amberpay-theme"
+                        enableSystem
+                        disableTransitionOnChange
+                    >
+                        {children}
+                    </ThemeProvider>
+                </SessionProvider>
             </body>
         </html>
     );

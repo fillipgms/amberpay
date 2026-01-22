@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import {
     Credenza,
@@ -18,8 +18,9 @@ import {
     SignOutIcon,
 } from "@phosphor-icons/react";
 
-import { devices } from "@/constants/devicesData";
 import { cn } from "@/lib/utils";
+import { deleteDevice, getDevicesData } from "@/actions/user";
+import { toast } from "sonner";
 
 type DeviceType = "desktop" | "mobile" | "unknown";
 
@@ -34,8 +35,22 @@ interface Device {
 
 const DevicesModal = () => {
     const [signingOut, setSigningOut] = useState<number | null>(null);
+    const [devices, setDevices] = useState<Device[]>([]);
+    const [devicesData, setDevicesData] = useState<any>(null);
 
-    const getDeviceType = (deviceName: string, userAgent: string): DeviceType => {
+    useEffect(() => {
+        async function fetchDevices() {
+            const res = await getDevicesData();
+            setDevices(res.data);
+        }
+
+        fetchDevices();
+    }, []);
+
+    const getDeviceType = (
+        deviceName: string,
+        userAgent: string,
+    ): DeviceType => {
         if (deviceName.includes("Desconhecido")) {
             // Check user agent for mobile indicators
             if (userAgent.toLowerCase().includes("dart")) {
@@ -84,7 +99,9 @@ const DevicesModal = () => {
     const getDeviceDisplayName = (deviceName: string): string => {
         const parts = deviceName.split(" - ");
         if (parts.length > 1) {
-            return parts[1] === "Desconhecido" ? "Dispositivo Desconhecido" : parts[1];
+            return parts[1] === "Desconhecido"
+                ? "Dispositivo Desconhecido"
+                : parts[1];
         }
         return deviceName;
     };
@@ -138,19 +155,16 @@ const DevicesModal = () => {
         setSigningOut(deviceId);
 
         try {
-            // Simulate API call - replace with your actual API endpoint
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await deleteDevice(deviceId);
 
-            // TODO: Implement actual sign out logic
-            console.log(`Signing out device ${deviceId}`);
-
-            // After successful sign out, you might want to:
-            // - Remove the device from the list
-            // - Show a success message
-            // - Refresh the devices list
+            setDevices((prevDevices) =>
+                prevDevices.filter((device) => device.id !== deviceId),
+            );
         } catch (error) {
             console.error("Failed to sign out device:", error);
-            // TODO: Show error message to user
+            toast.error(
+                "Não foi possível encerrar a sessão deste dispositivo.",
+            );
         } finally {
             setSigningOut(null);
         }
@@ -183,7 +197,9 @@ const DevicesModal = () => {
                                     device.device_name,
                                     device.user_agent,
                                 );
-                                const displayName = getDeviceDisplayName(device.device_name);
+                                const displayName = getDeviceDisplayName(
+                                    device.device_name,
+                                );
 
                                 return (
                                     <div
@@ -192,7 +208,8 @@ const DevicesModal = () => {
                                             "rounded-lg bg-card/50 border transition-all duration-200",
                                             "hover:bg-card/80 hover:border-border/80",
                                             "p-4 flex gap-4",
-                                            isThisDevice && "border-primary/50 bg-primary/5 hover:bg-primary/10",
+                                            isThisDevice &&
+                                                "border-primary/50 bg-primary/5 hover:bg-primary/10",
                                         )}
                                     >
                                         <div className="shrink-0 flex items-start pt-1">
@@ -216,11 +233,18 @@ const DevicesModal = () => {
                                                     <span className="font-mono text-xs">
                                                         {device.ip_address}
                                                     </span>
-                                                    <span className="text-foreground/30">•</span>
-                                                    <span className="truncate">{device.address}</span>
+                                                    <span className="text-foreground/30">
+                                                        •
+                                                    </span>
+                                                    <span className="truncate">
+                                                        {device.address}
+                                                    </span>
                                                 </p>
                                                 <p className="text-xs">
-                                                    Último acesso: {relativeTimeFromNow(device.last_used_at)}
+                                                    Último acesso:{" "}
+                                                    {relativeTimeFromNow(
+                                                        device.last_used_at,
+                                                    )}
                                                 </p>
                                             </div>
 
@@ -229,12 +253,23 @@ const DevicesModal = () => {
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
-                                                        onClick={() => handleSignOut(device.id)}
-                                                        disabled={signingOut === device.id}
+                                                        onClick={() =>
+                                                            handleSignOut(
+                                                                device.id,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            signingOut ===
+                                                            device.id
+                                                        }
                                                         className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 hover:border-destructive/40"
                                                     >
-                                                        <SignOutIcon size={16} weight="bold" />
-                                                        {signingOut === device.id
+                                                        <SignOutIcon
+                                                            size={16}
+                                                            weight="bold"
+                                                        />
+                                                        {signingOut ===
+                                                        device.id
                                                             ? "Encerrando..."
                                                             : "Encerrar sessão"}
                                                     </Button>

@@ -9,9 +9,13 @@ import {
     Tooltip,
 } from "recharts";
 import { useChartColors } from "@/hooks/useChartColors";
-import { data, CHART_MARGIN } from "@/constants/dashboardData";
+import { CHART_MARGIN } from "@/constants/dashboardData";
 
-export const GrowthAreaChart = memo(() => {
+interface GrowthAreaChartProps {
+    data?: Array<{ month: string; value: number }>;
+}
+
+export const GrowthAreaChart = memo(({ data = [] }: GrowthAreaChartProps) => {
     const chartColors = useChartColors();
 
     return (

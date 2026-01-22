@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDashboardAnimations } from "@/hooks/useDashboardAnimations";
 import { useAnimatedCounter } from "@/hooks/useAnimatedCounter";
 import { DashboardHeader } from "@/components/DashboardHeader";
@@ -11,9 +11,51 @@ import { PortionsBarChart } from "@/components/charts/PortionsBarChart";
 import { TimeFilter } from "@/components/TimeFilter";
 import { StatCard } from "@/components/StatCard";
 
-const DashboardClient = () => {
+const parseBRL = (value: string | number) => {
+    if (typeof value === "number") return value;
+    return Number(value.replace(".", "").replace(",", "."));
+};
+
+const formatBRL = (value: number) => {
+    return value.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+    });
+};
+
+const parseBRDate = (date: string) => {
+    const [day, month, year] = date.split("/");
+    return new Date(Number(year), Number(month) - 1, Number(day));
+};
+
+const formatShortDate = (date: Date) => {
+    return date.toLocaleDateString("pt-BR", {
+        day: "2-digit",
+        month: "short",
+    });
+};
+
+const DashboardClient = ({ homeData }: { homeData: HomeData }) => {
     const [isLoading, setIsLoading] = useState(true);
-    const displayValue = useAnimatedCounter(1500, isLoading);
+
+    const data = useMemo(() => {
+        return {
+            ...homeData,
+            available_balance: parseBRL(homeData.available_balance),
+            blocked_balance: parseBRL(homeData.blocked_balance),
+            today_sales: parseBRL(homeData.today_sales),
+            today_outflows: parseBRL(homeData.today_outflows),
+            sales_count: parseBRL(homeData.sales_count),
+            outflows_count: parseBRL(homeData.outflows_count),
+            last_7_days:
+                homeData.last_7_days?.map((day) => ({
+                    ...day,
+                    date: parseBRDate(day.date),
+                })) || [],
+        };
+    }, [homeData]);
+
+    const displayValue = useAnimatedCounter(data.available_balance, isLoading);
 
     useDashboardAnimations(isLoading);
 
@@ -21,6 +63,26 @@ const DashboardClient = () => {
         const timer = setTimeout(() => setIsLoading(false), 100);
         return () => clearTimeout(timer);
     }, []);
+
+    const chartData = data.last_7_days.map((day) => ({
+        month: formatShortDate(day.date),
+        value: day.sales,
+    }));
+
+    const outflowsChartData = data.last_7_days.map((day) => ({
+        month: formatShortDate(day.date),
+        value: day.outflows,
+    }));
+
+    const totalSales = data.last_7_days.reduce(
+        (acc, day) => acc + day.sales,
+        0,
+    );
+
+    const totalOutflows = data.last_7_days.reduce(
+        (acc, day) => acc + day.outflows,
+        0,
+    );
 
     if (isLoading) {
         return (
@@ -32,72 +94,61 @@ const DashboardClient = () => {
 
     return (
         <main>
-            <DashboardHeader displayValue={displayValue} />
+            <DashboardHeader
+                displayValue={displayValue}
+                blockedBalance={formatBRL(data.blocked_balance)}
+            />
 
             <section className="py-8 px-8 flex md:grid gap-8 flex-col md:grid-cols-3 md:justify-between border-b-gradient">
                 <div className="dashboardCard md:col-span-2 border-gradient rounded-md p-4 flex flex-col justify-center gap-4 border relative overflow-hidden">
-                    <h3 id="growthTitle" className="font-semibold text-xl">
-                        Crescimentos
-                    </h3>
-                    <TimeFilter activeItem="Anual" />
+                    <h3 className="font-semibold text-xl">Crescimentos</h3>
+                    <TimeFilter activeItem="7 dias" />
                     <div className="w-full h-64 rounded-xl">
-                        <GrowthAreaChart />
+                        <GrowthAreaChart data={chartData} />
                     </div>
-                    <div id="growthOverview">
-                        <h5 className="text-sm">Ganhos Totais</h5>
-                        <p className="font-semibold text-lg">R$ 15.000,00</p>
+                    <div>
+                        <h5 className="text-sm">Vendas Totais (7 dias)</h5>
+                        <p className="font-semibold text-lg">
+                            {formatBRL(totalSales)}
+                        </p>
                     </div>
-                    <div
-                        id="chartGlow"
-                        className="bg-primary/50 size-200 rounded-full blur-3xl absolute -z-10 left-1/5 top-1/3"
-                    ></div>
+                    <div className="bg-primary/50 size-200 rounded-full blur-3xl absolute -z-10 left-1/5 top-1/3" />
                 </div>
 
-                <div
-                    id="overview"
-                    className="dashboardCard border-gradient rounded-md p-4 flex flex-col gap-4 border overflow-hidden"
-                >
-                    <h3 id="overviewTitle" className="font-semibold text-xl">
-                        Resumo
-                    </h3>
-                    <TimeFilter />
+                <div className="dashboardCard border-gradient rounded-md p-4 flex flex-col gap-4 border overflow-hidden">
+                    <h3 className="font-semibold text-xl">Resumo</h3>
+                    <TimeFilter activeItem="7 dias" />
                     <div className="flex gap-2">
                         <OverviewPieChart />
                         <div className="flex-1 flex justify-center gap-2 flex-col">
-                            <div className="overviewLegend">
-                                <div className="flex items-center gap-1">
-                                    <div className="bg-primary size-2 rounded-full"></div>
-                                    <h5 className="text-sm">Entradas</h5>
-                                </div>
+                            <div>
+                                <h5 className="text-sm">Vendas</h5>
                                 <h4 className="text-xl font-semibold">
-                                    R$ 17.000,00
+                                    {formatBRL(totalSales)}
                                 </h4>
                             </div>
-                            <div className="overviewLegend">
-                                <div className="flex items-center gap-1">
-                                    <div className="bg-[#9ca3af] size-2 rounded-full"></div>
-                                    <h5 className="text-sm">Saídas</h5>
-                                </div>
+                            <div>
+                                <h5 className="text-sm">Estornos</h5>
                                 <h4 className="text-xl font-semibold">
-                                    R$ 2.000,00
+                                    {formatBRL(totalOutflows)}
                                 </h4>
                             </div>
                         </div>
                     </div>
-                    <div className="h-1 border-b-gradient"></div>
-                    <h3 className="font-semibold text-xl">Médias</h3>
-                    <div className="flex flex-wrap justify-between md:grid md:grid-cols-3  gap-4">
-                        <div className="metrics">
-                            <h5>Diário</h5>
-                            <p className="font-semibold">R$ 15,00</p>
+                    <div className="h-1 border-b-gradient" />
+                    <h3 className="font-semibold text-xl">Hoje</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <h5>Vendas</h5>
+                            <p className="font-semibold">
+                                {formatBRL(data.today_sales)}
+                            </p>
                         </div>
-                        <div className="metrics">
-                            <h5>Semanal</h5>
-                            <p className="font-semibold">R$ 15,00</p>
-                        </div>
-                        <div className="metrics">
-                            <h5>Mensal</h5>
-                            <p className="font-semibold">R$ 15,00</p>
+                        <div>
+                            <h5>Estornos</h5>
+                            <p className="font-semibold">
+                                {formatBRL(data.today_outflows)}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -106,49 +157,24 @@ const DashboardClient = () => {
             <section className="grid md:grid-cols-3 gap-8 border-b-gradient py-8 px-8">
                 <div className="dashboardCard border-gradient rounded-md p-4 flex flex-col gap-4 border">
                     <h3 className="font-semibold text-xl">
-                        Status das Transações
+                        Transações (7 dias)
                     </h3>
-                    <TimeFilter />
+                    <TimeFilter activeItem="7 dias" />
                     <div className="flex gap-2">
                         <TransactionsPieChart />
-                        <div className="flex-1 flex items-center gap-4 flex-wrap">
+                        <div className="flex-1 flex gap-4 flex-wrap">
                             <div>
-                                <div className="flex gap-1 items-center">
-                                    <div className="bg-primary size-2 rounded-full"></div>
-                                    <h5 className="text-sm">Aprovadas</h5>
-                                </div>
-                                <h4 className="text-xl font-semibold">1.150</h4>
+                                <h5 className="text-sm">Vendas</h5>
+                                <h4 className="text-xl font-semibold">
+                                    {data.sales_count}
+                                </h4>
                             </div>
                             <div>
-                                <div className="flex gap-1 items-center">
-                                    <div className="bg-[#9ca3af] size-2 rounded-full"></div>
-                                    <h5 className="text-sm">Pendente</h5>
-                                </div>
-                                <h4 className="text-xl font-semibold">240</h4>
+                                <h5 className="text-sm">Estornos</h5>
+                                <h4 className="text-xl font-semibold">
+                                    {data.outflows_count}
+                                </h4>
                             </div>
-                            <div>
-                                <div className="flex gap-1 items-center">
-                                    <div className="bg-destructive size-2 rounded-full"></div>
-                                    <h5 className="text-sm">Estornadas</h5>
-                                </div>
-                                <h4 className="text-xl font-semibold">200</h4>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="h-1 border-b-gradient"></div>
-                    <h3 className="font-semibold text-xl">Médias</h3>
-                    <div className="flex flex-wrap justify-between md:grid md:grid-cols-3 gap-4">
-                        <div>
-                            <h5>Diário</h5>
-                            <p className="font-semibold">R$ 15,00</p>
-                        </div>
-                        <div>
-                            <h5>Semanal</h5>
-                            <p className="font-semibold">R$ 15,00</p>
-                        </div>
-                        <div>
-                            <h5>Mensal</h5>
-                            <p className="font-semibold">R$ 15,00</p>
                         </div>
                     </div>
                 </div>
@@ -182,7 +208,7 @@ const DashboardClient = () => {
                         ]}
                     />
                     <StatCard
-                        title="Origem das TransaÃ§Ãµes"
+                        title="Origem das Transações"
                         items={[
                             { label: "Site", value: "60%" },
                             { label: "App", value: "30%" },
@@ -200,17 +226,19 @@ const DashboardClient = () => {
                     <PortionsBarChart />
                 </div>
 
-                <div className="md:col-span-2 border-gradient rounded-md p-4 flex flex-col justify-center gap-4 border relative overflow-hidden">
-                    <h3 className="font-semibold text-xl">Crescimentos</h3>
-                    <TimeFilter />
+                <div className="md:col-span-2 border-gradient rounded-md p-4 flex flex-col gap-4 border relative overflow-hidden">
+                    <h3 className="font-semibold text-xl">Estornos (7 dias)</h3>
+                    <TimeFilter activeItem="7 dias" />
                     <div className="w-full h-64 rounded-xl">
-                        <GrowthAreaChart />
+                        <GrowthAreaChart data={outflowsChartData} />
                     </div>
                     <div>
-                        <h5 className="text-sm">Ganhos Totais</h5>
-                        <p className="font-semibold text-lg">R$ 15.000,00</p>
+                        <h5 className="text-sm">Estornos Totais (7 dias)</h5>
+                        <p className="font-semibold text-lg">
+                            {formatBRL(totalOutflows)}
+                        </p>
                     </div>
-                    <div className="bg-primary/50 size-200 rounded-full blur-3xl absolute -z-10 left-1/5 top-1/3"></div>
+                    <div className="bg-primary/50 size-200 rounded-full blur-3xl absolute -z-10 left-1/5 top-1/3" />
                 </div>
             </section>
         </main>

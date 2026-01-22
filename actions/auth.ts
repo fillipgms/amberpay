@@ -1,0 +1,249 @@
+"use server";
+
+import { createSession, deleteSession } from "@/lib/session";
+import { loginSchema, verifySchema } from "@/schemas";
+import axios from "axios";
+import { cookies } from "next/headers";
+
+export async function logIn(formData: FormData) {
+    try {
+        const validationResult = loginSchema.safeParse({
+            email: formData.get("email"),
+            password: formData.get("password"),
+        });
+
+        if (!validationResult.success) {
+            return {
+                success: false,
+                message: "Por favor, corrija os erros abaixo:",
+                errors: validationResult.error.flatten().fieldErrors,
+            };
+        }
+
+        const { email, password } = validationResult.data;
+
+        const res = await axios.post(
+            `${process.env.NEXT_PUBLIC_API_URL}/login`,
+            {
+                email,
+                password,
+            },
+        );
+
+        if (res.status === 200 && res.data.token) {
+            if (res.data.qrcode) {
+                return {
+                    success: true,
+                    requiresVerification: true,
+                    qrcode: res.data.qrcode,
+                    token: res.data.token,
+                    user: res.data.user,
+                    message: "Verificação de 2FA necessária.",
+                };
+            }
+
+            const { token, user } = res.data;
+            await createSession(token, 3600);
+
+            return {
+                success: true,
+                requiresVerification: false,
+                user,
+                message: "Login realizado com sucesso.",
+            };
+        }
+
+        return {
+            success: false,
+            message: "Resposta inesperada do servidor.",
+        };
+    } catch (error) {
+        console.error("Login failed:", error);
+
+        if (axios.isAxiosError(error) && error.response) {
+            return {
+                success: false,
+                message:
+                    error.response.data?.message || "Email ou Senha inválidos.",
+            };
+        }
+
+        return {
+            success: false,
+            message: "Erro ao conectar com o servidor.",
+        };
+    }
+}
+
+export async function verify2FA(formData: FormData) {
+    try {
+        const validationResult = verifySchema.safeParse({
+            code: formData.get("code"),
+            token: formData.get("token"),
+        });
+
+        if (!validationResult.success) {
+            return {
+                success: false,
+                message: "Por favor, corrija os erros abaixo:",
+                errors: validationResult.error.flatten().fieldErrors,
+            };
+        }
+
+        const { code, token } = validationResult.data;
+
+        const res = await axios.post(
+            `${process.env.NEXT_PUBLIC_API_URL}/verify-2fa`,
+            {
+                code,
+                token,
+            },
+        );
+
+        if (res.status === 200 && res.data.token) {
+            const { token: accessToken, expires_in, user } = res.data;
+            await createSession(accessToken, expires_in);
+            return {
+                success: true,
+                user,
+                message: "Autenticação concluída com sucesso.",
+            };
+        }
+
+        return {
+            success: false,
+            message: "Resposta inesperada do servidor.",
+        };
+    } catch (error) {
+        console.error("2FA verification failed:", error);
+
+        if (axios.isAxiosError(error) && error.response) {
+            return {
+                success: false,
+                message: error.response.data?.message || "Código inválido.",
+            };
+        }
+
+        return {
+            success: false,
+            message: "Erro ao conectar com o servidor.",
+        };
+    }
+}
+
+export async function getSession() {
+    const cookie = (await cookies()).get("session")?.value;
+    if (!cookie) {
+        return null;
+    }
+
+    try {
+        const session = JSON.parse(cookie) as SessionPayload;
+
+        const expires = new Date(session.expires);
+        if (expires < new Date()) {
+            await clearExpiredSession();
+            return null;
+        }
+
+        return session;
+    } catch (error: unknown) {
+        console.error("Failed to get session:", error);
+        await clearExpiredSession();
+        return null;
+    }
+}
+
+export async function clearExpiredSession() {
+    "use server";
+    const cookieStore = await cookies();
+    cookieStore.delete("token");
+}
+
+export async function logOut() {
+    try {
+        const session = await getSession();
+
+        if (!session?.accessToken) {
+            await deleteSession();
+            return {
+                success: true,
+                message: "No active session found. Cleared local session.",
+            };
+        }
+
+        const response = await axios.post(
+            "https://api.playfivers.com/api/auth/logout",
+            {},
+            {
+                headers: {
+                    Authorization: `Bearer ${session.accessToken}`,
+                    "Content-Type": "application/json",
+                },
+            },
+        );
+
+        if (response.status === 200) {
+            await deleteSession();
+            return {
+                success: true,
+                message: "Logout successful",
+            };
+        }
+
+        return {
+            success: false,
+            message: "Unexpected response from server",
+        };
+    } catch (error) {
+        console.error("Error in logout:", error);
+        if (axios.isAxiosError(error)) {
+            if (error.response?.status === 401) {
+                await deleteSession();
+                return {
+                    success: true,
+                    message: "Session expired. Cleared local session.",
+                };
+            }
+
+            return {
+                success: false,
+                message:
+                    error.response?.data?.message ||
+                    "Failed to logout from server",
+            };
+        }
+
+        const apiMessage = (error as { response?: { data?: { msg?: string } } })
+            ?.response?.data?.msg;
+        return {
+            success: false,
+            message: apiMessage || "An unexpected error occurred during logout",
+        };
+    }
+}
+
+export async function VerifySession() {
+    try {
+        const session = await getSession();
+
+        const data = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_URL}/verify`,
+            {
+                headers: {
+                    Authorization: `Bearer ${session?.accessToken}`,
+                },
+            },
+        );
+
+        if (data.status === 200 && data.data.valid) {
+            return {
+                valid: true,
+            };
+        }
+
+        return {
+            valid: false,
+        };
+    } catch (error) {}
+}

@@ -29,13 +29,11 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import {
-    CaretUpIcon,
-    DevicesIcon,
-    GearIcon,
-} from "@phosphor-icons/react/dist/ssr";
+import { CaretUpIcon } from "@phosphor-icons/react/dist/ssr";
 import DevicesModal from "./DevicesModal";
 import ConfigsModal from "./ConfigsModal";
+import { logOut } from "@/actions/auth";
+import { useSession } from "@/contexts/sessionContext";
 
 const items = [
     { title: "Dashboard", url: "/", icon: GridIcon },
@@ -47,6 +45,20 @@ const items = [
 
 const AppSidebar = () => {
     const pathname = usePathname();
+
+    const { user } = useSession();
+
+    const handleLogout = async () => {
+        await logOut();
+    };
+
+    const showFirstAndLastName = (name: string) => {
+        const nameParts = name.trim().split(" ");
+        if (nameParts.length === 1) {
+            return nameParts[0];
+        }
+        return `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
+    };
 
     return (
         <Sidebar collapsible="icon">
@@ -94,7 +106,8 @@ const AppSidebar = () => {
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton>
-                                    <UserIcon /> Username
+                                    <UserIcon />{" "}
+                                    {showFirstAndLastName(user?.name || "")}
                                     <CaretUpIcon className="ml-auto" />
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>
@@ -112,7 +125,7 @@ const AppSidebar = () => {
                                 >
                                     <DevicesModal />
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleLogout}>
                                     <span className="flex items-center gap-2">
                                         <ArrowDoorOut className="text-foreground" />
                                         Sair
