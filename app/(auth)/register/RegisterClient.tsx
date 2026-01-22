@@ -25,6 +25,7 @@ import { twMerge } from "tailwind-merge";
 import { CheckCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getPlaceInfo } from "@/actions/viacep";
+import { register } from "@/actions/auth";
 
 const RegisterClient = ({
     defaultName,
@@ -44,6 +45,12 @@ const RegisterClient = ({
     const [name, setName] = useState(defaultName);
     const [email, setEmail] = useState(defaultEmail);
     const [password, setPassword] = useState(defaultPassword);
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [tipoPessoa, setTipoPessoa] = useState("fisica");
+    const [cpf, setCpf] = useState("");
+    const [cnpj, setCnpj] = useState("");
+    const [dataNascimento, setDataNascimento] = useState("");
+    const [celular, setCelular] = useState("");
 
     const [cep, setCep] = useState("");
     const [logradouro, setLogradouro] = useState("");
@@ -54,6 +61,8 @@ const RegisterClient = ({
     const [estado, setEstado] = useState("");
 
     const [userCanEdit, setUserCanEdit] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const router = useRouter();
 
@@ -84,8 +93,47 @@ const RegisterClient = ({
         return () => clearTimeout(timeout);
     }, [cep]);
 
-    const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setIsSubmitting(true);
+        setError(null);
+
+        try {
+            const formData = new FormData();
+            formData.append("tipoPessoa", tipoPessoa);
+            formData.append("nomeCompleto", name);
+            formData.append("cpf", cpf);
+            formData.append("cnpj", cnpj);
+            formData.append("dataNascimento", dataNascimento);
+            formData.append("celular", celular);
+            formData.append("email", email);
+            formData.append("password", password);
+            formData.append("confirm_password", confirmPassword);
+            formData.append("cep", cep);
+            formData.append("logradouro", logradouro);
+            formData.append("numero", number);
+            formData.append("complemento", complemento);
+            formData.append("bairro", bairro);
+            formData.append("cidade", cidade);
+            formData.append("estado", estado);
+
+            const result = await register(formData);
+
+            if (result.success) {
+                // Redirect to Veriff if URL is provided
+                if (result.veriffUrl) {
+                    window.location.href = result.veriffUrl;
+                } else {
+                    router.push("/dashboard");
+                }
+            } else {
+                setError(result.message || "Erro ao criar conta");
+            }
+        } catch (err) {
+            setError("Erro ao criar conta. Tente novamente.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const onSubmitPersonal = (e: React.FormEvent<HTMLFormElement>) => {
@@ -212,7 +260,7 @@ const RegisterClient = ({
                         <div className="flex flex-col gap-2">
                             <label htmlFor="email">Tipo de Pessoa</label>
 
-                            <Select defaultValue="fisica">
+                            <Select defaultValue="fisica" onValueChange={setTipoPessoa}>
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Selecione o tipo de conta" />
                                 </SelectTrigger>
@@ -235,6 +283,8 @@ const RegisterClient = ({
 
                             <Input
                                 placeholder="000.000.000-00"
+                                value={cpf}
+                                onChange={(evt) => setCpf(evt.target.value)}
                                 icon={
                                     <IdentificationBadgeIcon
                                         size={20}
@@ -247,7 +297,11 @@ const RegisterClient = ({
                         <div className="flex flex-col gap-2">
                             <label htmlFor="email">Data de Nascimento</label>
 
-                            <Input type="date" />
+                            <Input
+                                type="date"
+                                value={dataNascimento}
+                                onChange={(evt) => setDataNascimento(evt.target.value)}
+                            />
                         </div>
 
                         <div className="flex flex-col gap-2">
@@ -255,6 +309,8 @@ const RegisterClient = ({
 
                             <Input
                                 placeholder="(00) 0000-0000"
+                                value={celular}
+                                onChange={(evt) => setCelular(evt.target.value)}
                                 icon={
                                     <PhoneIcon
                                         size={20}
@@ -298,8 +354,20 @@ const RegisterClient = ({
                             <label htmlFor="login_password">
                                 Repita a senha
                             </label>
-                            <Input type="password" />
+                            <Input
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(evt) =>
+                                    setConfirmPassword(evt.target.value)
+                                }
+                            />
                         </div>
+
+                        {error && (
+                            <div className="md:col-span-2 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                                <p className="text-red-500 text-sm">{error}</p>
+                            </div>
+                        )}
 
                         <Button className="w-full md:col-span-2 mt-4 cursor-pointer">
                             Continuar
@@ -427,8 +495,17 @@ const RegisterClient = ({
                                 onChange={(evt) => setEstado(evt.target.value)}
                             />
                         </div>
-                        <Button className="w-full md:col-span-6 mt-4 cursor-pointer">
-                            Criar Conta
+                        {error && (
+                            <div className="md:col-span-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                                <p className="text-red-500 text-sm">{error}</p>
+                            </div>
+                        )}
+
+                        <Button
+                            className="w-full md:col-span-6 mt-4 cursor-pointer"
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? "Criando conta..." : "Criar Conta"}
                         </Button>
                     </form>
                 )}
