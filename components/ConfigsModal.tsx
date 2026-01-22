@@ -50,8 +50,6 @@ const FeeItem = ({ icon, label, value, description }: FeeItemProps) => (
 const ConfigsModal = () => {
     const { user } = useSession();
 
-    console.log(user);
-
     if (!user) return;
 
     const [isSaving, setIsSaving] = useState(false);
