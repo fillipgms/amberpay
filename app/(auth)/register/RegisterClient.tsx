@@ -120,7 +120,6 @@ const RegisterClient = ({
             const result = await register(formData);
 
             if (result.success) {
-                // Redirect to Veriff if URL is provided
                 if (result.veriffUrl) {
                     window.location.href = result.veriffUrl;
                 } else {
@@ -166,7 +165,7 @@ const RegisterClient = ({
                     <div
                         className={twMerge(
                             "flex gap-2",
-                            currentTab === "personal" ? "opacity-50" : ""
+                            currentTab === "personal" ? "opacity-50" : "",
                         )}
                     >
                         <div>
@@ -179,7 +178,7 @@ const RegisterClient = ({
                                 className={twMerge(
                                     currentTab === "personal"
                                         ? ""
-                                        : "text-primary"
+                                        : "text-primary",
                                 )}
                             />
                         </div>
@@ -214,7 +213,7 @@ const RegisterClient = ({
                                 "h-2",
                                 currentTab === "personal"
                                     ? "bg-foreground/20"
-                                    : "bg-primary"
+                                    : "bg-primary",
                             )}
                         ></Squircle>
                     </div>
@@ -230,7 +229,7 @@ const RegisterClient = ({
 
                             <Input
                                 placeholder="Insira seu Nome"
-                                defaultValue={name}
+                                value={name}
                                 onChange={(evt) => setName(evt.target.value)}
                                 icon={
                                     <PersonIcon
@@ -246,7 +245,7 @@ const RegisterClient = ({
 
                             <Input
                                 placeholder="Insira seu Email"
-                                defaultValue={email}
+                                value={email}
                                 onChange={(evt) => setEmail(evt.target.value)}
                                 icon={
                                     <EnvelopeIcon
@@ -260,7 +259,10 @@ const RegisterClient = ({
                         <div className="flex flex-col gap-2">
                             <label htmlFor="email">Tipo de Pessoa</label>
 
-                            <Select defaultValue="fisica" onValueChange={setTipoPessoa}>
+                            <Select
+                                value="fisica"
+                                onValueChange={setTipoPessoa}
+                            >
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Selecione o tipo de conta" />
                                 </SelectTrigger>
@@ -300,7 +302,9 @@ const RegisterClient = ({
                             <Input
                                 type="date"
                                 value={dataNascimento}
-                                onChange={(evt) => setDataNascimento(evt.target.value)}
+                                onChange={(evt) =>
+                                    setDataNascimento(evt.target.value)
+                                }
                             />
                         </div>
 
@@ -324,7 +328,7 @@ const RegisterClient = ({
                             <label htmlFor="login_password">Senha</label>
                             <Input
                                 type={canViewPassword ? "text" : "password"}
-                                defaultValue={password}
+                                value={password}
                                 onChange={(evt) =>
                                     setPassword(evt.target.value)
                                 }
@@ -385,7 +389,7 @@ const RegisterClient = ({
                                 name="cep"
                                 id="cep"
                                 placeholder="Insira seu CEP"
-                                defaultValue={cep}
+                                value={cep}
                                 onChange={(evt) => setCep(evt.target.value)}
                                 icon={
                                     <MapTrifoldIcon
@@ -398,7 +402,7 @@ const RegisterClient = ({
                         <div
                             className={twMerge(
                                 "flex flex-col gap-2 md:col-span-6",
-                                userCanEdit ? "" : "opacity-50"
+                                userCanEdit ? "" : "opacity-50",
                             )}
                         >
                             <label htmlFor="email">Logradouro</label>
@@ -408,7 +412,7 @@ const RegisterClient = ({
                                 id="logradouro"
                                 placeholder="Rua, Avenida, etc."
                                 readOnly={!userCanEdit}
-                                defaultValue={logradouro}
+                                value={logradouro}
                                 onChange={(evt) =>
                                     setLogradouro(evt.target.value)
                                 }
@@ -421,14 +425,14 @@ const RegisterClient = ({
                                 name="numero"
                                 id="numero"
                                 placeholder="O número de sua residẽncia"
-                                defaultValue={number}
+                                value={number}
                                 onChange={(evt) => setNumber(evt.target.value)}
                             />
                         </div>
                         <div
                             className={twMerge(
                                 "flex flex-col gap-2 md:col-span-3",
-                                userCanEdit ? "" : "opacity-50"
+                                userCanEdit ? "" : "opacity-50",
                             )}
                         >
                             <label htmlFor="email">Complemento</label>
@@ -438,7 +442,7 @@ const RegisterClient = ({
                                 id="complemento"
                                 placeholder="Apto, Sala, etc."
                                 readOnly={!userCanEdit}
-                                defaultValue={complemento}
+                                value={complemento}
                                 onChange={(evt) =>
                                     setComplemento(evt.target.value)
                                 }
@@ -447,24 +451,24 @@ const RegisterClient = ({
                         <div
                             className={twMerge(
                                 "flex flex-col gap-2 md:col-span-2",
-                                userCanEdit ? "" : "opacity-50"
+                                userCanEdit ? "" : "opacity-50",
                             )}
                         >
                             <label htmlFor="email">Bairro</label>
 
                             <Input
-                                name="complemento"
-                                id="complemento"
+                                name="bairro"
+                                id="bairro"
                                 placeholder="O bairro de sua residẽncia"
-                                readOnly
-                                defaultValue={bairro}
+                                readOnly={!userCanEdit}
+                                value={bairro}
                                 onChange={(evt) => setBairro(evt.target.value)}
                             />
                         </div>
                         <div
                             className={twMerge(
                                 "flex flex-col gap-2 md:col-span-2",
-                                userCanEdit ? "" : "opacity-50"
+                                userCanEdit ? "" : "opacity-50",
                             )}
                         >
                             <label htmlFor="email">Cidade</label>
@@ -474,14 +478,14 @@ const RegisterClient = ({
                                 id="cidade"
                                 placeholder="A cidade de sua residẽncia"
                                 readOnly={!userCanEdit}
-                                defaultValue={cidade}
+                                value={cidade}
                                 onChange={(evt) => setCidade(evt.target.value)}
                             />
                         </div>
                         <div
                             className={twMerge(
                                 "flex flex-col gap-2 md:col-span-2",
-                                userCanEdit ? "" : "opacity-50"
+                                userCanEdit ? "" : "opacity-50",
                             )}
                         >
                             <label htmlFor="email">Estado</label>
@@ -491,7 +495,7 @@ const RegisterClient = ({
                                 id="estado"
                                 placeholder="Sp"
                                 readOnly={!userCanEdit}
-                                defaultValue={estado}
+                                value={estado}
                                 onChange={(evt) => setEstado(evt.target.value)}
                             />
                         </div>
@@ -523,7 +527,7 @@ const RegisterClient = ({
                             "h-2",
                             currentTab === "personal"
                                 ? "bg-foreground/20"
-                                : "bg-primary"
+                                : "bg-primary",
                         )}
                     ></Squircle>
                 </div>
