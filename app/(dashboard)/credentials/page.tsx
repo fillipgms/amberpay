@@ -2,6 +2,8 @@ import { getCredentialsList } from "@/actions/credentials";
 import CredentialCard from "@/components/CredentialCard";
 import CreateCredentialModal from "./CreateCredentialModal";
 
+export const dynamic = "force-dynamic";
+
 export default async function CredentialsPage() {
     const credentialsData = await getCredentialsList({ page: 1 });
 

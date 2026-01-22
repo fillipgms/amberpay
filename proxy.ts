@@ -46,7 +46,6 @@ export async function proxy(request: NextRequest) {
     }
 
     if (!isLoggedIn && !isLoginRoute) {
-        console.log("is not loggedin and is not login route");
         return NextResponse.redirect(new URL("/login", request.url));
     }
 
