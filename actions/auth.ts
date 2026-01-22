@@ -3,7 +3,7 @@
 import { createSession, deleteSession } from "@/lib/session";
 import { loginSchema, verifySchema } from "@/schemas";
 import axios from "axios";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 export async function logIn(formData: FormData) {
     try {
@@ -114,10 +114,14 @@ export async function verify2FA(formData: FormData) {
         const { code, token } = validationResult.data;
 
         const res = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_URL}/verify-2fa`,
+            `${process.env.NEXT_PUBLIC_API_URL}/2fa/verify`,
             {
-                code,
-                token,
+                "2fa_code": code,
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
             },
         );
 
