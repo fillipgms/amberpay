@@ -3,8 +3,18 @@ import ArrowTrendUp from "@/public/icons/arrow-trend-up";
 import React from "react";
 import { twMerge } from "tailwind-merge";
 
-const Card = ({ children }: { children?: React.ReactNode }) => {
-    return <div className="border rounded-md p-4 space-y-4">{children}</div>;
+const Card = ({
+    className,
+    children,
+}: {
+    className: string;
+    children?: React.ReactNode;
+}) => {
+    return (
+        <div className={twMerge("border rounded-md p-4 space-y-4", className)}>
+            {children}
+        </div>
+    );
 };
 
 const CardTitle = ({ children }: { children?: React.ReactNode }) => {
@@ -32,7 +42,7 @@ const CardCompare = ({
             <span
                 className={twMerge(
                     "flex items-center justify-between gap-1",
-                    isHigher ? "text-primary" : "text-destructive"
+                    isHigher ? "text-primary" : "text-destructive",
                 )}
             >
                 {isHigher ? <ArrowTrendUp /> : <ArrowTrendDown />}

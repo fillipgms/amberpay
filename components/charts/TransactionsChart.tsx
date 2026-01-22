@@ -1,3 +1,5 @@
+"use client";
+
 import { memo } from "react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, Tooltip } from "recharts";
 import { useChartColors } from "@/hooks/useChartColors";

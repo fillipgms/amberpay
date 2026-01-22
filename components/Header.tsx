@@ -6,10 +6,14 @@ import { twMerge } from "tailwind-merge";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { PaperPlaneIcon, PaperPlaneTiltIcon } from "@phosphor-icons/react";
+import { useSession } from "@/contexts/sessionContext";
+import Link from "next/link";
 
 const Header = () => {
     const [show, setShow] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
+
+    const { user } = useSession();
 
     const controlNavbar = () => {
         if (typeof window !== "undefined") {
@@ -40,6 +44,14 @@ const Header = () => {
         });
     }, [show]);
 
+    const showFirstAndLastName = (name: string) => {
+        const nameParts = name.trim().split(" ");
+        if (nameParts.length === 1) {
+            return nameParts[0];
+        }
+        return `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
+    };
+
     return (
         <header
             id="main-header"
@@ -47,13 +59,15 @@ const Header = () => {
                 "py-5 px-8 flex items-center justify-between w-full border-b-gradient sticky! top-0 left-0 bg-background z-50",
             )}
         >
-            <div className="flex gap-4">
+            <div className="flex gap-4 items-center">
                 <SidebarTrigger />
-                <p>William Bowery</p>
+                <p>{user?.name && showFirstAndLastName(user.name)}</p>
             </div>
-            <Button>
-                <PaperPlaneTiltIcon size={16} weight="fill" />
-                Chamar Gerente
+            <Button asChild>
+                <Link href="https://t.me/OndaPay_bot" target="_blank">
+                    <PaperPlaneTiltIcon size={16} weight="fill" />
+                    Chamar Gerente
+                </Link>
             </Button>
         </header>
     );

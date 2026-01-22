@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import {
     Credenza,
     CredenzaBody,
@@ -18,10 +18,12 @@ import {
     PercentIcon,
 } from "@phosphor-icons/react";
 
-import { meData } from "@/constants/meData";
 import Input from "./Input";
 import { Switch } from "./ui/switch";
 import { Button } from "./ui/button";
+import { updateMe } from "@/actions/user";
+import { toast } from "sonner";
+import { useSession } from "@/contexts/sessionContext";
 
 interface FeeItemProps {
     icon: React.ReactNode;
@@ -46,14 +48,29 @@ const FeeItem = ({ icon, label, value, description }: FeeItemProps) => (
 );
 
 const ConfigsModal = () => {
+    const { user } = useSession();
+
+    console.log(user);
+
+    if (!user) return;
+
     const [isSaving, setIsSaving] = useState(false);
+    const [autoApproveWithdrawals, setAutoApproveWithdrawals] = useState(
+        user.auto_approve_withdrawal,
+    );
 
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            // TODO: Implement save logic
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            console.log("Saving configurations...");
+            const res = await updateMe({
+                auto_approve_withdrawal: autoApproveWithdrawals,
+            });
+
+            if (res.error) {
+                toast.error(res.error || "Erro ao salvar configurações.");
+            }
+
+            toast.success("Configurações salvas com sucesso.");
         } catch (error) {
             console.error("Failed to save configurations:", error);
         } finally {
@@ -92,7 +109,8 @@ const ConfigsModal = () => {
                                         type="text"
                                         name="nome"
                                         id="nome"
-                                        defaultValue={meData.name}
+                                        defaultValue={user.name}
+                                        readOnly
                                     />
                                 </div>
 
@@ -107,7 +125,8 @@ const ConfigsModal = () => {
                                         type="email"
                                         name="email"
                                         id="email"
-                                        defaultValue={meData.email}
+                                        defaultValue={user.email}
+                                        readOnly
                                     />
                                 </div>
 
@@ -122,7 +141,8 @@ const ConfigsModal = () => {
                                         type="text"
                                         name="cpfOrCnpj"
                                         id="cpfOrCnpj"
-                                        defaultValue={meData.cpfOrCnpj}
+                                        defaultValue={user.cpfOrCnpj}
+                                        readOnly
                                     />
                                 </div>
                             </div>
@@ -150,8 +170,9 @@ const ConfigsModal = () => {
                                     <div className="flex items-center justify-end">
                                         <Switch
                                             name="auto_approve_withdrawal"
-                                            defaultChecked={
-                                                meData.auto_approve_withdrawal
+                                            checked={autoApproveWithdrawals}
+                                            onCheckedChange={
+                                                setAutoApproveWithdrawals
                                             }
                                         />
                                     </div>
@@ -174,8 +195,9 @@ const ConfigsModal = () => {
                                         <Switch
                                             name="enabled_withdraw"
                                             defaultChecked={
-                                                meData.enabled_withdraw
+                                                user.enabled_withdraw
                                             }
+                                            disabled
                                         />
                                     </div>
                                 </div>
@@ -197,8 +219,9 @@ const ConfigsModal = () => {
                                         <Switch
                                             name="enabled_deposit"
                                             defaultChecked={
-                                                meData.enabled_deposit
+                                                user.enabled_deposit
                                             }
+                                            disabled
                                         />
                                     </div>
                                 </div>
@@ -228,7 +251,7 @@ const ConfigsModal = () => {
                                             />
                                         }
                                         label="Quantia máxima"
-                                        value={`R$ ${meData.fee.limit_withdrawal}`}
+                                        value={`R$ ${user.fee.limit_withdrawal}`}
                                         description="por solicitação"
                                     />
                                     <FeeItem
@@ -239,7 +262,7 @@ const ConfigsModal = () => {
                                             />
                                         }
                                         label="Quantia mínima"
-                                        value={`R$ ${meData.fee.minimum_withdrawal}`}
+                                        value={`R$ ${user.fee.minimum_withdrawal}`}
                                         description="por solicitação"
                                     />
                                     <FeeItem
@@ -250,7 +273,7 @@ const ConfigsModal = () => {
                                             />
                                         }
                                         label="Limite diário"
-                                        value={meData.fee.limit_per_day_withdrawal_user.toString()}
+                                        value={user.fee.limit_per_day_withdrawal_user.toString()}
                                         description="via Painel"
                                     />
                                     <FeeItem
@@ -261,7 +284,7 @@ const ConfigsModal = () => {
                                             />
                                         }
                                         label="Limite diário"
-                                        value={meData.fee.limit_per_day_withdrawal.toString()}
+                                        value={user.fee.limit_per_day_withdrawal.toString()}
                                         description="via API"
                                     />
                                 </div>
@@ -285,7 +308,7 @@ const ConfigsModal = () => {
                                             />
                                         }
                                         label="Quantia máxima"
-                                        value={`R$ ${meData.fee.max_deposit}`}
+                                        value={`R$ ${user.fee.max_deposit}`}
                                         description="por solicitação"
                                     />
                                     <FeeItem
@@ -296,7 +319,7 @@ const ConfigsModal = () => {
                                             />
                                         }
                                         label="Quantia mínima"
-                                        value={`R$ ${meData.fee.minimum_deposit}`}
+                                        value={`R$ ${user.fee.minimum_deposit}`}
                                         description="por solicitação"
                                     />
                                     <FeeItem
@@ -307,7 +330,7 @@ const ConfigsModal = () => {
                                             />
                                         }
                                         label="Limite diário"
-                                        value={meData.fee.max_deposit_per_day.toLocaleString(
+                                        value={user.fee.max_deposit_per_day.toLocaleString(
                                             "pt-BR",
                                         )}
                                         description="via API"
@@ -330,7 +353,7 @@ const ConfigsModal = () => {
                                             />
                                         }
                                         label="Taxa percentual - Depósito"
-                                        value={`${meData.fee.fee_percent_deposit}%`}
+                                        value={`${user.fee.fee_percent_deposit}%`}
                                         description="acima de R$ 15,00"
                                     />
                                     <FeeItem
@@ -341,7 +364,7 @@ const ConfigsModal = () => {
                                             />
                                         }
                                         label="Taxa percentual - Saque"
-                                        value={`${meData.fee.fee_percent_withdrawal}%`}
+                                        value={`${user.fee.fee_percent_withdrawal}%`}
                                         description="acima de R$ 30,00"
                                     />
                                     <FeeItem
@@ -352,7 +375,7 @@ const ConfigsModal = () => {
                                             />
                                         }
                                         label="Taxa fixa - Depósito"
-                                        value={`R$ ${meData.fee.fee_fixed_deposit}`}
+                                        value={`R$ ${user.fee.fee_fixed_deposit}`}
                                         description="menores de R$ 15,00"
                                     />
                                     <FeeItem
@@ -363,7 +386,7 @@ const ConfigsModal = () => {
                                             />
                                         }
                                         label="Taxa fixa - Saque"
-                                        value={`R$ ${meData.fee.fee_percent_withdrawal_fixed}`}
+                                        value={`R$ ${user.fee.fee_percent_withdrawal_fixed}`}
                                         description="menores de R$ 30,00"
                                     />
                                 </div>

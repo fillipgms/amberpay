@@ -1,5 +1,3 @@
-"use client";
-
 import {
     Card,
     CardTitle,
@@ -10,27 +8,36 @@ import {
 import { TransactionsChart } from "@/components/charts/TransactionsChart";
 import TransactionsTable from "@/components/tables/TransactionsTable";
 import { TimeFilter } from "@/components/TimeFilter";
-import { transactionsData } from "@/constants/transacionsData";
-import { usePageAnimations } from "@/hooks/usePageAnimations";
-import { useEffect, useState } from "react";
+import PaginationControls from "@/components/Pagination";
+import { getTransactions } from "@/actions/transactions";
+import TransactionsHeader from "./TransactionsHeader";
 
-export default function TransacionsPage() {
-    const [isLoading, setIsLoading] = useState(true);
+interface TransactionsPageProps {
+    searchParams: Promise<{
+        page?: string;
+        filter?: string;
+        status?: string;
+        start_date?: string;
+        end_date?: string;
+        apply?: string;
+        search?: string;
+    }>;
+}
 
-    usePageAnimations(isLoading);
+export default async function TransactionsPage({
+    searchParams,
+}: TransactionsPageProps) {
+    const params = await searchParams;
 
-    useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 50);
-        return () => clearTimeout(timer);
-    }, []);
-
-    if (isLoading) {
-        return (
-            <main className="absolute z-100 left-0 top-0 min-h-svh w-full flex items-center justify-center bg-background">
-                <div className="text-primary animate-pulse">Carregando...</div>
-            </main>
-        );
-    }
+    const data = await getTransactions({
+        page: params.page ? parseInt(params.page) : 1,
+        filter: params.filter,
+        status: params.status,
+        start_date: params.start_date,
+        end_date: params.end_date,
+        apply: params.apply,
+        search: params.search,
+    });
 
     return (
         <main className="grid md:grid-cols-[2fr_1fr]">
@@ -59,9 +66,19 @@ export default function TransacionsPage() {
                     </Card>
                 </section>
 
+                <TransactionsHeader />
+
                 <section className="py-8 px-8">
                     <div className="page-content">
-                        <TransactionsTable transactions={transactionsData} />
+                        <TransactionsTable transactions={data.data} />
+                        <PaginationControls
+                            currentPage={data.current_page}
+                            lastPage={data.last_page}
+                            hasNextPage={!!data.next_page_url}
+                            hasPrevPage={!!data.prev_page_url}
+                            baseUrl="/transactions"
+                            searchParams={params}
+                        />
                     </div>
                 </section>
             </div>
@@ -70,7 +87,7 @@ export default function TransacionsPage() {
                     <h3 id="pageTitle" className="font-semibold text-xl">
                         Transações Mensais
                     </h3>
-                    <TimeFilter activeItem="Anual" />
+                    <TimeFilter activeItem="Mensal" />
                     <div>
                         <p className="font-semibold text-lg">R$ 15.000,00</p>
                         <p className="text-xs">

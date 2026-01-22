@@ -10,31 +10,88 @@ import {
 } from "ag-grid-community";
 import { twMerge } from "tailwind-merge";
 import { TrashIcon } from "@phosphor-icons/react";
+import { removeIpFromWhitelist } from "@/actions/ip";
+
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "../ui/button";
+import { useRouter } from "next/navigation";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 export interface WhitelistEntry {
-    id: string;
-    date: string;
+    id: number;
+    user_id: number;
     ip: string;
-    description: string;
+    created_at: string;
+    updated_at: string;
 }
 
 export type WhitelistArray = WhitelistEntry[];
 
-const WhitelistTable = ({
-    whitelist,
+const ConfirmateDelete = ({
     onDelete,
+    id,
 }: {
-    whitelist: WhitelistArray;
-    onDelete?: (id: string) => void;
+    onDelete: (id: string) => void;
+    id: string;
 }) => {
+    return (
+        <AlertDialog>
+            <AlertDialogTrigger asChild>
+                <button
+                    className={twMerge(
+                        "flex items-center gap-2 justify-center py-1 px-3 rounded text-sm font-medium",
+                        "bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors",
+                    )}
+                >
+                    <TrashIcon size={14} />
+                    <span>Remover</span>
+                </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>
+                        Tem certeza que deseja remover este IP da whitelist?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Isso irá remover
+                        permanentemente o IP da whitelist.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogAction onClick={() => onDelete?.(id)}>
+                        Continue
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    );
+};
+
+const WhitelistTable = ({ whitelist }: { whitelist: WhitelistArray }) => {
+    const router = useRouter();
+
+    const onDelete = async (id: string) => {
+        removeIpFromWhitelist(Number(id));
+        router.refresh();
+    };
+
     const colDefs = useMemo<ColDef[]>(() => {
         return [
             { field: "id", pinned: "left", sortable: false },
             {
                 headerName: "Data",
-                field: "date",
+                field: "created_at",
                 suppressMovable: true,
                 cellRenderer: (p: ICellRendererParams) => {
                     const date = new Date(p.value);
@@ -66,18 +123,7 @@ const WhitelistTable = ({
                     );
                 },
             },
-            {
-                headerName: "Descrição",
-                field: "description",
-                suppressMovable: true,
-                cellRenderer: (p: ICellRendererParams) => {
-                    return (
-                        <div className="flex items-center h-full w-full">
-                            <p className="truncate">{p.value || "—"}</p>
-                        </div>
-                    );
-                },
-            },
+
             {
                 headerName: "Ações",
                 field: "actions",
@@ -86,17 +132,11 @@ const WhitelistTable = ({
                 suppressMovable: true,
                 cellRenderer: (p: ICellRendererParams) => {
                     return (
-                        <div className="flex items-center justify-center h-full w-full">
-                            <button
-                                onClick={() => onDelete?.(p.data.id)}
-                                className={twMerge(
-                                    "flex items-center gap-2 justify-center py-1 px-3 rounded text-sm font-medium",
-                                    "bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
-                                )}
-                            >
-                                <TrashIcon size={14} />
-                                <span>Remover</span>
-                            </button>
+                        <div className="flex items-center justify-center">
+                            <ConfirmateDelete
+                                onDelete={onDelete}
+                                id={p.data.id}
+                            />
                         </div>
                     );
                 },

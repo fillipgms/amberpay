@@ -1,15 +1,15 @@
 import { memo } from "react";
 import { Button } from "@/components/ui/button";
-import ArrowsBoldOpositeDirection from "@/public/icons/arrows-bold-opposite-direction";
 import ArrowsOppositeDirection from "@/public/icons/arrows-opposite-direction";
 import WithdrawModal from "./WithdrawModal";
 
 interface DashboardHeaderProps {
     displayValue: string;
+    blockedBalance?: string;
 }
 
 export const DashboardHeader = memo(
-    ({ displayValue }: DashboardHeaderProps) => (
+    ({ displayValue, blockedBalance }: DashboardHeaderProps) => (
         <section className="py-8 px-8 flex gap-8 flex-col md:flex-row md:justify-between border-b-gradient">
             <div className="space-y-1">
                 <h2 id="saldo" className="font-bold text-4xl text-primary">
@@ -17,7 +17,7 @@ export const DashboardHeader = memo(
                 </h2>
                 <p id="saldoBloqueado" className="text-sm">
                     Saldo Bloqueado:{" "}
-                    <span className="font-bold">R$ 130,00</span>
+                    <span className="font-bold">R$ {blockedBalance}</span>
                 </p>
                 <p id="ultimaTransacao" className="text-xs">
                     Última transação: Você recebeu • R$ 150,00 de Marcos • Há
