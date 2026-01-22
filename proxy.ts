@@ -20,6 +20,8 @@ export async function proxy(request: NextRequest) {
 
             const verified = await VerifySession();
 
+            console.log(verified);
+
             if (!verified?.valid) {
                 console.log("not valid session");
                 request.cookies.delete("session");
