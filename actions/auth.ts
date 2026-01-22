@@ -236,7 +236,7 @@ export async function VerifySession() {
             },
         );
 
-        if (data.status === 200 && data.data.valid) {
+        if (data.status === 200 && data.data.status === 1) {
             return {
                 valid: true,
             };

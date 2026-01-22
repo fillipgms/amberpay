@@ -21,12 +21,14 @@ export async function proxy(request: NextRequest) {
             const verified = await VerifySession();
 
             if (!verified?.valid) {
+                console.log("not valid session");
                 request.cookies.delete("session");
                 isLoggedIn = false;
                 return;
             }
 
             isLoggedIn = expires > new Date() && verified?.valid;
+            console.log("is logged in?", isLoggedIn);
         } catch {
             isLoggedIn = false;
         }
@@ -44,6 +46,7 @@ export async function proxy(request: NextRequest) {
     }
 
     if (!isLoggedIn && !isLoginRoute) {
+        console.log("is not loggedin and is not login route");
         return NextResponse.redirect(new URL("/login", request.url));
     }
 
