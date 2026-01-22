@@ -28,7 +28,6 @@ export async function proxy(request: NextRequest) {
             }
 
             isLoggedIn = expires > new Date() && verified?.valid;
-            console.log("is logged in?", isLoggedIn);
         } catch {
             isLoggedIn = false;
         }
@@ -37,6 +36,7 @@ export async function proxy(request: NextRequest) {
     const isLoginRoute =
         request.nextUrl.pathname === "/login" ||
         request.nextUrl.pathname === "/register" ||
+        request.nextUrl.pathname === "/verify" ||
         request.nextUrl.pathname === "/forgotpassword" ||
         request.nextUrl.pathname === "/reset-password" ||
         request.nextUrl.pathname === "/termos";
