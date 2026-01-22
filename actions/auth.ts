@@ -21,7 +21,6 @@ export async function logIn(formData: FormData) {
         }
 
         const { email, password } = validationResult.data;
-
         const res = await axios.post(
             `${process.env.NEXT_PUBLIC_API_URL}/login`,
             {
@@ -32,7 +31,12 @@ export async function logIn(formData: FormData) {
 
         console.log(res.data);
 
-        if (res.status === 200 && res.data.token) {
+        // Check if response indicates successful login (status: true or status: 200)
+        if (
+            (res.status === 200 && res.data.token) ||
+            (res.data.status && res.data.token)
+        ) {
+            // Case 1: First time 2FA setup (has QR code)
             if (res.data.qrcode) {
                 return {
                     success: true,
@@ -44,9 +48,24 @@ export async function logIn(formData: FormData) {
                 };
             }
 
+            // Case 2: 2FA is already set up, just needs code verification
+            if (
+                res.data.msg === "login_not_passed" ||
+                res.data.status === true
+            ) {
+                return {
+                    success: true,
+                    requiresVerification: true,
+                    qrcode: null, // No QR code needed, user already has 2FA set up
+                    token: res.data.token,
+                    user: res.data.user,
+                    message: "Digite o código do seu autenticador.",
+                };
+            }
+
+            // Case 3: Login successful without 2FA required
             const { token, user } = res.data;
             await createSession(token, 3600);
-
             return {
                 success: true,
                 requiresVerification: false,

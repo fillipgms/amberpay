@@ -32,10 +32,12 @@ const LoginForm = () => {
                 localStorage.setItem("user", JSON.stringify(result.user));
             }
 
-            if (result.requiresVerification && result.qrcode && result.token) {
-                router.push(
-                    `/verify?qrcode=${encodeURIComponent(result.qrcode)}&token=${encodeURIComponent(result.token)}`,
-                );
+            if (result.requiresVerification && result.token) {
+                const params = new URLSearchParams({ token: result.token });
+                if (result.qrcode) {
+                    params.append("qrcode", result.qrcode);
+                }
+                router.push(`/verify?${params.toString()}`);
             } else {
                 refreshSession();
                 router.push("/");
