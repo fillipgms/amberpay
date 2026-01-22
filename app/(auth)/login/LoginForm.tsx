@@ -32,6 +32,8 @@ const LoginForm = () => {
                 localStorage.setItem("user", JSON.stringify(result.user));
             }
 
+            console.log(result);
+
             if (result.requiresVerification && result.qrcode && result.token) {
                 router.push(
                     `/verify?qrcode=${encodeURIComponent(result.qrcode)}&token=${encodeURIComponent(result.token)}`,
