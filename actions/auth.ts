@@ -65,7 +65,7 @@ export async function logIn(formData: FormData) {
 
             // Case 3: Login successful without 2FA required
             const { token, user } = res.data;
-            await createSession(token, 3600);
+            await createSession(token);
             return {
                 success: true,
                 requiresVerification: false,
@@ -126,8 +126,8 @@ export async function verify2FA(formData: FormData) {
         );
 
         if (res.status === 200 && res.data.token) {
-            const { token: accessToken, expires_in, user } = res.data;
-            await createSession(accessToken, expires_in);
+            const { token: accessToken, user } = res.data;
+            await createSession(accessToken);
             return {
                 success: true,
                 user,
