@@ -37,7 +37,7 @@ export async function logIn(formData: FormData) {
             (res.data.status && res.data.token)
         ) {
             // Case 1: First time 2FA setup (has QR code)
-            if (res.data.qrcode) {
+            if (res.data.qrcode !== null) {
                 return {
                     success: true,
                     requiresVerification: true,
