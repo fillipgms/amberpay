@@ -247,3 +247,51 @@ export async function VerifySession() {
         };
     } catch (error) {}
 }
+
+export async function register(formData: FormData) {
+    try {
+        const res = await axios.post(
+            `${process.env.NEXT_PUBLIC_API_URL}/register`,
+            formData,
+            {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            },
+        );
+
+        if (res.status === 200 || res.status === 201) {
+            // Check if the response contains a Veriff URL
+            const veriffUrl = res.data?.veriff_url || res.data?.veriffUrl;
+
+            return {
+                success: true,
+                message: "Conta criada com sucesso!",
+                veriffUrl: veriffUrl,
+                data: res.data,
+            };
+        }
+
+        return {
+            success: false,
+            message: "Resposta inesperada do servidor.",
+        };
+    } catch (error) {
+        console.error("Registration failed:", error);
+
+        if (axios.isAxiosError(error) && error.response) {
+            return {
+                success: false,
+                message:
+                    error.response.data?.message ||
+                    error.response.data?.msg ||
+                    "Erro ao criar conta. Verifique os dados e tente novamente.",
+            };
+        }
+
+        return {
+            success: false,
+            message: "Erro ao conectar com o servidor.",
+        };
+    }
+}
