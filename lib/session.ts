@@ -19,8 +19,8 @@ const cookie = {
     },
 };
 
-export async function createSession(accessToken: string, expiresIn: number) {
-    const expires = new Date(Date.now() + expiresIn * 1000);
+export async function createSession(accessToken: string) {
+    const expires = new Date(Date.now() * 1000);
 
     const session = {
         accessToken,
