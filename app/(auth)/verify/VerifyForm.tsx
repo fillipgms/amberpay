@@ -27,7 +27,7 @@ const VerifyForm = () => {
     const token = searchParams.get("token");
 
     useGSAP(() => {
-        if (qrCodeRef.current && codeInputsRef.current) {
+        if (qrcode && qrCodeRef.current && codeInputsRef.current) {
             const tl = gsap.timeline();
 
             tl.from(qrCodeRef.current, {
@@ -44,16 +44,25 @@ const VerifyForm = () => {
                     stagger: 0.1,
                     ease: "power2.out",
                 },
-                "-=0.3"
+                "-=0.3",
             );
+        } else if (codeInputsRef.current) {
+            // If no QR code, just animate the input fields
+            gsap.from(codeInputsRef.current.children, {
+                y: 20,
+                opacity: 0,
+                duration: 0.4,
+                stagger: 0.1,
+                ease: "power2.out",
+            });
         }
     }, [qrcode]);
 
     useEffect(() => {
-        if (!qrcode || !token) {
+        if (!token) {
             router.push("/login");
         }
-    }, [qrcode, token, router]);
+    }, [token, router]);
 
     const handleChange = (index: number, value: string) => {
         if (!/^\d*$/.test(value)) return;
@@ -70,7 +79,7 @@ const VerifyForm = () => {
 
     const handleKeyDown = (
         index: number,
-        e: React.KeyboardEvent<HTMLInputElement>
+        e: React.KeyboardEvent<HTMLInputElement>,
     ) => {
         if (e.key === "Backspace" && !code[index] && index > 0) {
             inputRefs.current[index - 1]?.focus();
@@ -151,7 +160,7 @@ const VerifyForm = () => {
                             onComplete: () => {
                                 gsap.set(codeInputsRef.current, { x: 0 });
                             },
-                        }
+                        },
                     );
                 }
             }
@@ -165,13 +174,13 @@ const VerifyForm = () => {
         }
     };
 
-    if (!qrcode || !token) {
+    if (!token) {
         return null;
     }
 
     return (
         <form ref={formRef} onSubmit={onSubmit} className="space-y-6">
-            {qrcode && (
+            {qrcode && qrcode !== "null" && (
                 <div
                     ref={qrCodeRef}
                     className="flex flex-col items-center gap-4"
@@ -193,10 +202,7 @@ const VerifyForm = () => {
 
             <div ref={codeInputsRef} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-2">
-                    <label
-                        htmlFor="code-0"
-                        className="text-center font-medium"
-                    >
+                    <label htmlFor="code-0" className="text-center font-medium">
                         Digite o código de 6 dígitos
                     </label>
                     <div className="flex justify-center gap-2">
@@ -218,7 +224,9 @@ const VerifyForm = () => {
                                         handleChange(index, e.target.value)
                                     }
                                     onKeyDown={(e) => handleKeyDown(index, e)}
-                                    onPaste={index === 0 ? handlePaste : undefined}
+                                    onPaste={
+                                        index === 0 ? handlePaste : undefined
+                                    }
                                     disabled={loading}
                                     className="w-12 h-14 text-center text-2xl font-bold bg-transparent border-none focus:outline-none disabled:opacity-50"
                                     autoComplete="off"
@@ -235,9 +243,7 @@ const VerifyForm = () => {
 
                 <div className="flex items-center gap-2 text-sm text-foreground/60">
                     <KeyIcon size={16} className="text-primary" />
-                    <p>
-                        Use seu aplicativo autenticador para gerar o código
-                    </p>
+                    <p>Use seu aplicativo autenticador para gerar o código</p>
                 </div>
             </div>
 
