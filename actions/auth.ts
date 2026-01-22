@@ -30,6 +30,8 @@ export async function logIn(formData: FormData) {
             },
         );
 
+        console.log(res.data);
+
         if (res.status === 200 && res.data.token) {
             if (res.data.qrcode) {
                 return {
