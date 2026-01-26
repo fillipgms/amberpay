@@ -32,26 +32,28 @@ export default function TransactionsHeader() {
     const [isExpanded, setIsExpanded] = useState(true);
 
     useEffect(() => {
-        const ctx = gsap.context(() => {
-            gsap.from(containerRef.current, {
-                opacity: 0,
-                y: -20,
-                duration: 0.6,
-                ease: "power3.out",
-            });
+        if (!filtersRef.current) return;
 
-            gsap.from(filtersRef.current?.children || [], {
-                opacity: 0,
-                y: 20,
-                duration: 0.5,
-                stagger: 0.08,
-                ease: "power2.out",
-                delay: 0.2,
-            });
-        }, containerRef);
+        const el = filtersRef.current;
+        const height = el.scrollHeight;
 
-        return () => ctx.revert();
-    }, []);
+        gsap.to(el, {
+            opacity: isExpanded ? 1 : 0,
+            scale: isExpanded ? 1 : 0.5,
+            translateY: isExpanded ? 0 : "-40%",
+            duration: 0.6,
+            ease: "expo.out",
+            overflow: "hidden",
+            overwrite: "auto",
+        });
+
+        gsap.to(containerRef.current, {
+            height: isExpanded ? "auto" : "0px",
+            delay: 0,
+            ease: "expo.out",
+            autoRound: false,
+        });
+    }, [isExpanded]);
 
     const handleFilterChange = () => {
         gsap.to(buttonRef.current, {
@@ -78,22 +80,6 @@ export default function TransactionsHeader() {
 
     const toggleExpanded = () => {
         setIsExpanded(!isExpanded);
-
-        if (!isExpanded) {
-            gsap.to(filtersRef.current, {
-                height: "auto",
-                opacity: 1,
-                duration: 0.4,
-                ease: "power2.out",
-            });
-        } else {
-            gsap.to(filtersRef.current, {
-                height: 0,
-                opacity: 0,
-                duration: 0.3,
-                ease: "power2.in",
-            });
-        }
     };
 
     const activeFiltersCount = [
@@ -107,7 +93,7 @@ export default function TransactionsHeader() {
 
     return (
         <div
-            ref={containerRef}
+            id="filtersContainer"
             className="relative bg-gradient-to-b from-background to-background/95 backdrop-blur-xl"
         >
             <div className="max-w-7xl mx-auto px-6 sm:px-8 py-8">
@@ -133,188 +119,197 @@ export default function TransactionsHeader() {
                 </div>
 
                 {/* Filters Grid */}
-                <div
-                    ref={filtersRef}
-                    className="overflow-hidden"
-                    style={{
-                        height: isExpanded ? "auto" : 0,
-                        opacity: isExpanded ? 1 : 0,
-                    }}
-                >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                        {/* Filter Type */}
-                        <div className="group">
-                            <label className="block text-xs font-medium text-foreground/60 mb-2 tracking-wide uppercase">
-                                Tipo
-                            </label>
-                            <div className="relative">
+                <div ref={containerRef} className="overflow-hidden">
+                    <div
+                        ref={filtersRef}
+                        id="filters"
+                        className="overflow-hidden"
+                    >
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                            {/* Filter Type */}
+                            <div className="group">
+                                <label className="block text-xs font-medium text-foreground/60 mb-2 tracking-wide uppercase">
+                                    Tipo
+                                </label>
+                                <div className="relative">
+                                    <Select
+                                        value={filter}
+                                        onValueChange={setFilter}
+                                    >
+                                        <SelectTrigger className="w-full h-11 bg-background/50 backdrop-blur-sm border-border/50 hover:border-border transition-all duration-200 focus:ring-2 focus:ring-primary/20 rounded-xl">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl">
+                                            <SelectItem
+                                                value="Tudo"
+                                                className="rounded-lg"
+                                            >
+                                                Tudo
+                                            </SelectItem>
+                                            <SelectItem
+                                                value="Entrada"
+                                                className="rounded-lg"
+                                            >
+                                                Entrada
+                                            </SelectItem>
+                                            <SelectItem
+                                                value="Saída"
+                                                className="rounded-lg"
+                                            >
+                                                Saída
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            {/* Status */}
+                            <div className="group">
+                                <label className="block text-xs font-medium text-foreground/60 mb-2 tracking-wide uppercase">
+                                    Status
+                                </label>
                                 <Select
-                                    value={filter}
-                                    onValueChange={setFilter}
+                                    value={status}
+                                    onValueChange={setStatus}
                                 >
                                     <SelectTrigger className="w-full h-11 bg-background/50 backdrop-blur-sm border-border/50 hover:border-border transition-all duration-200 focus:ring-2 focus:ring-primary/20 rounded-xl">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-xl">
                                         <SelectItem
-                                            value="Tudo"
+                                            value="Todos"
                                             className="rounded-lg"
                                         >
-                                            Tudo
+                                            Todos
                                         </SelectItem>
                                         <SelectItem
-                                            value="Entrada"
+                                            value="Aprovada"
                                             className="rounded-lg"
                                         >
-                                            Entrada
+                                            Aprovada
                                         </SelectItem>
                                         <SelectItem
-                                            value="Saída"
+                                            value="Pendente"
                                             className="rounded-lg"
                                         >
-                                            Saída
+                                            Pendente
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="Recusada"
+                                            className="rounded-lg"
+                                        >
+                                            Recusada
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-                        </div>
 
-                        {/* Status */}
-                        <div className="group">
-                            <label className="block text-xs font-medium text-foreground/60 mb-2 tracking-wide uppercase">
-                                Status
-                            </label>
-                            <Select value={status} onValueChange={setStatus}>
-                                <SelectTrigger className="w-full h-11 bg-background/50 backdrop-blur-sm border-border/50 hover:border-border transition-all duration-200 focus:ring-2 focus:ring-primary/20 rounded-xl">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl">
-                                    <SelectItem
-                                        value="Todos"
-                                        className="rounded-lg"
-                                    >
-                                        Todos
-                                    </SelectItem>
-                                    <SelectItem
-                                        value="Aprovada"
-                                        className="rounded-lg"
-                                    >
-                                        Aprovada
-                                    </SelectItem>
-                                    <SelectItem
-                                        value="Pendente"
-                                        className="rounded-lg"
-                                    >
-                                        Pendente
-                                    </SelectItem>
-                                    <SelectItem
-                                        value="Recusada"
-                                        className="rounded-lg"
-                                    >
-                                        Recusada
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                            {/* Application */}
+                            <div className="group">
+                                <label className="block text-xs font-medium text-foreground/60 mb-2 tracking-wide uppercase">
+                                    Origem
+                                </label>
+                                <Select value={apply} onValueChange={setApply}>
+                                    <SelectTrigger className="w-full h-11 bg-background/50 backdrop-blur-sm border-border/50 hover:border-border transition-all duration-200 focus:ring-2 focus:ring-primary/20 rounded-xl">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl">
+                                        <SelectItem
+                                            value="Todos"
+                                            className="rounded-lg"
+                                        >
+                                            Todos
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="API"
+                                            className="rounded-lg"
+                                        >
+                                            API
+                                        </SelectItem>
+                                        <SelectItem
+                                            value="Painel"
+                                            className="rounded-lg"
+                                        >
+                                            Painel
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                        {/* Application */}
-                        <div className="group">
-                            <label className="block text-xs font-medium text-foreground/60 mb-2 tracking-wide uppercase">
-                                Origem
-                            </label>
-                            <Select value={apply} onValueChange={setApply}>
-                                <SelectTrigger className="w-full h-11 bg-background/50 backdrop-blur-sm border-border/50 hover:border-border transition-all duration-200 focus:ring-2 focus:ring-primary/20 rounded-xl">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl">
-                                    <SelectItem
-                                        value="Todos"
-                                        className="rounded-lg"
-                                    >
-                                        Todos
-                                    </SelectItem>
-                                    <SelectItem
-                                        value="API"
-                                        className="rounded-lg"
-                                    >
-                                        API
-                                    </SelectItem>
-                                    <SelectItem
-                                        value="Painel"
-                                        className="rounded-lg"
-                                    >
-                                        Painel
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Start Date */}
-                        <div className="group">
-                            <label className="block text-xs font-medium text-foreground/60 mb-2 tracking-wide uppercase">
-                                Data Inicial
-                            </label>
-                            <Input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="h-11 bg-background/50 backdrop-blur-sm border-border/50 hover:border-border transition-all duration-200 focus:ring-2 focus:ring-primary/20 rounded-xl"
-                            />
-                        </div>
-
-                        {/* End Date */}
-                        <div className="group">
-                            <label className="block text-xs font-medium text-foreground/60 mb-2 tracking-wide uppercase">
-                                Data Final
-                            </label>
-                            <Input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="h-11 bg-background/50 backdrop-blur-sm border-border/50 hover:border-border transition-all duration-200 focus:ring-2 focus:ring-primary/20 rounded-xl"
-                            />
-                        </div>
-
-                        {/* Search */}
-                        <div className="group">
-                            <label className="block text-xs font-medium text-foreground/60 mb-2 tracking-wide uppercase">
-                                Buscar
-                            </label>
-                            <div className="relative">
+                            {/* Start Date */}
+                            <div className="group">
+                                <label className="block text-xs font-medium text-foreground/60 mb-2 tracking-wide uppercase">
+                                    Data Inicial
+                                </label>
                                 <Input
-                                    type="text"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    placeholder="Buscar transações..."
-                                    className="h-11 pr-10 bg-background/50 backdrop-blur-sm border-border/50 hover:border-border transition-all duration-200 focus:ring-2 focus:ring-primary/20 rounded-xl"
-                                />
-                                <MagnifyingGlassIcon
-                                    size={18}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/40"
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) =>
+                                        setStartDate(e.target.value)
+                                    }
+                                    className="h-11 bg-background/50 backdrop-blur-sm border-border/50 hover:border-border transition-all duration-200 focus:ring-2 focus:ring-primary/20 rounded-xl"
                                 />
                             </div>
+
+                            {/* End Date */}
+                            <div className="group">
+                                <label className="block text-xs font-medium text-foreground/60 mb-2 tracking-wide uppercase">
+                                    Data Final
+                                </label>
+                                <Input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="h-11 bg-background/50 backdrop-blur-sm border-border/50 hover:border-border transition-all duration-200 focus:ring-2 focus:ring-primary/20 rounded-xl"
+                                />
+                            </div>
+
+                            {/* Search */}
+                            <div className="group">
+                                <label className="block text-xs font-medium text-foreground/60 mb-2 tracking-wide uppercase">
+                                    Buscar
+                                </label>
+                                <div className="relative">
+                                    <Input
+                                        type="text"
+                                        value={search}
+                                        onChange={(e) =>
+                                            setSearch(e.target.value)
+                                        }
+                                        placeholder="Buscar transações..."
+                                        className="h-11 pr-10 bg-background/50 backdrop-blur-sm border-border/50 hover:border-border transition-all duration-200 focus:ring-2 focus:ring-primary/20 rounded-xl"
+                                    />
+                                    <MagnifyingGlassIcon
+                                        size={18}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/40"
+                                    />
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex items-center justify-between pt-4 border-t border-border/30">
-                        <button
-                            onClick={() => {
-                                setFilter("Tudo");
-                                setStatus("Todos");
-                                setStartDate("");
-                                setEndDate("");
-                                setApply("Todos");
-                                setSearch("");
-                            }}
-                            className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors"
-                        >
-                            Limpar tudo
-                        </button>
+                        {/* Action Buttons */}
+                        <div className="flex items-center justify-between pt-4 border-t border-border/30">
+                            <button
+                                onClick={() => {
+                                    setFilter("Tudo");
+                                    setStatus("Todos");
+                                    setStartDate("");
+                                    setEndDate("");
+                                    setApply("Todos");
+                                    setSearch("");
+                                }}
+                                className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors"
+                            >
+                                Limpar tudo
+                            </button>
 
-                        <Button ref={buttonRef} onClick={handleFilterChange}>
-                            Aplicar Filtros
-                        </Button>
+                            <Button
+                                ref={buttonRef}
+                                onClick={handleFilterChange}
+                            >
+                                Aplicar Filtros
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>

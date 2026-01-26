@@ -1,4 +1,5 @@
-import { memo } from "react";
+"use client";
+import { memo, useMemo } from "react";
 import {
     ResponsiveContainer,
     AreaChart,
@@ -11,16 +12,40 @@ import {
 import { useChartColors } from "@/hooks/useChartColors";
 import { CHART_MARGIN } from "@/constants/dashboardData";
 
-interface GrowthAreaChartProps {
-    data?: Array<{ month: string; value: number }>;
+interface ChartDataResponse {
+    status: number;
+    period: string;
+    range: {
+        start: string;
+        end: string;
+    };
+    labels: string[];
+    series: number[];
+    total: number;
+    growth_percent: number | null;
 }
 
-export const GrowthAreaChart = memo(({ data = [] }: GrowthAreaChartProps) => {
+interface GrowthAreaChartProps {
+    data?: ChartDataResponse;
+}
+
+export const GrowthAreaChart = memo(({ data }: GrowthAreaChartProps) => {
     const chartColors = useChartColors();
+
+    const chartData = useMemo(() => {
+        if (!data || !data.labels || !data.series) {
+            return [];
+        }
+
+        return data.labels.map((label, index) => ({
+            month: label,
+            value: data.series[index] || 0,
+        }));
+    }, [data]);
 
     return (
         <ResponsiveContainer width="100%" height="100%" minHeight={256}>
-            <AreaChart data={data} margin={CHART_MARGIN}>
+            <AreaChart data={chartData} margin={CHART_MARGIN}>
                 <defs>
                     <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                         <stop

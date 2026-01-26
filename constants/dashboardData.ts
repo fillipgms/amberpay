@@ -38,15 +38,12 @@ export const portionsData = [
     { label: "8x", value: 30 },
 ];
 
-export const PIE_COLORS = ["#4ade80", "transparent", "#9ca3af", "transparent"];
+export const PIE_COLORS = ["#4ade80", "#9ca3af"];
 
 export const TRANSACTION_COLORS = [
     "#4ade80",
-    "transparent",
     "#9ca3af",
-    "transparent",
     "oklch(0.6368 0.2078 25.3313)",
-    "transparent",
 ];
 
 export const BAR_COLORS = [

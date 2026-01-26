@@ -6,17 +6,17 @@ export const StatCard = memo(
         items,
     }: {
         title: string;
-        items: Array<{ label: string; value: string }>;
+        items: Array<{ label: string; percent: string }>;
     }) => (
         <div className="dashboardCard p-4 rounded border flex-1 flex flex-col justify-center gap-4">
             <h2 className="font-semibold text-lg">{title}</h2>
-            {items.map(({ label, value }) => (
+            {items.map(({ label, percent }) => (
                 <div key={label} className="flex items-center justify-between">
                     <p>{label}</p>
-                    <span>{value}</span>
+                    <span>{percent}%</span>
                 </div>
             ))}
         </div>
-    )
+    ),
 );
 StatCard.displayName = "StatCard";
