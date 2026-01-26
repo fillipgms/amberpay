@@ -153,3 +153,23 @@ interface FeeProps {
     fee_percent_withdrawal_fixed: string;
     fee_fixed_deposit: string;
 }
+
+interface dashboardDataProps {
+    available_balance: number;
+    blocked_balance: number;
+    volume_transaction: VolumeTransactionProps;
+    ticket_medio: number;
+    last_transaction: LastTransactionProps | null;
+}
+
+interface VolumeTransactionProps {
+    count: number;
+    value: number;
+}
+
+interface LastTransactionProps {
+    type: string;
+    value: number;
+    name: string;
+    created_at: strinv;
+}
