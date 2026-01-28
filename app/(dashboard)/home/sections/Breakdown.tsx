@@ -2,7 +2,6 @@ import { GetBreakdownData } from "@/actions/dashboard";
 import { PortionsBarChart } from "@/components/charts/PortionsBarChart";
 import { StatCard } from "@/components/StatCard";
 import TimeFilter from "@/components/TimeFilter";
-import React from "react";
 
 const breakdown = async ({
     filter,
