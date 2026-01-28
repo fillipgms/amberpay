@@ -7,7 +7,7 @@ import {
 } from "@/components/Card";
 import { TransactionsChart } from "@/components/charts/TransactionsChart";
 import TransactionsTable from "@/components/tables/TransactionsTable";
-import { TimeFilter } from "@/components/TimeFilter";
+import TimeFilter from "@/components/TimeFilter";
 import PaginationControls from "@/components/Pagination";
 import { getTransactions } from "@/actions/transactions";
 import TransactionsHeader from "./TransactionsHeader";
@@ -89,7 +89,7 @@ export default async function TransactionsPage({
                     <h3 id="pageTitle" className="font-semibold text-xl">
                         Transações Mensais
                     </h3>
-                    <TimeFilter activeItem="Mensal" />
+                    {/* <TimeFilter activeItem="Mensal" /> */}
                     <div>
                         <p className="font-semibold text-lg">R$ 15.000,00</p>
                         <p className="text-xs">
