@@ -1,21 +1,42 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
 import { GetTransactionsData } from "@/actions/dashboard";
 import { TransactionsPieChart } from "@/components/charts/TransactionsPieChart";
 import { StatCard } from "@/components/StatCard";
 import TimeFilter from "@/components/TimeFilter";
 import formatCurrency from "@/utils/formatCurrency";
-
-export const dynamic = "force-dynamic";
+import { useGSAPAnimation, scaleIn, staggerFadeIn } from "@/hooks/useGSAPAnimation";
 
 type PeriodType = "today" | "week" | "month" | "year";
 
-const Transactions = async ({
+const Transactions = ({
     filter,
     searchParams,
 }: {
     filter: string;
     searchParams: Record<string, string | string[] | undefined>;
 }) => {
-    const data = await GetTransactionsData(filter);
+    const [data, setData] = useState<any>(null);
+    const sectionRef = useRef<HTMLDivElement>(null);
+    const gsapContext = useGSAPAnimation();
+    const hasAnimated = useRef(false);
+
+    useEffect(() => {
+        GetTransactionsData(filter).then(setData);
+    }, [filter]);
+
+    // Only animate sections on first load
+    useEffect(() => {
+        if (!data || !sectionRef.current || hasAnimated.current) return;
+
+        gsapContext.current?.add(() => {
+            staggerFadeIn(".transaction-item", 0.1, 0.6);
+        });
+
+        hasAnimated.current = true;
+    }, [data, gsapContext]);
+
+    if (!data) return null;
 
     const periodText: Record<PeriodType, string> = {
         today: "Hoje",
@@ -30,7 +51,10 @@ const Transactions = async ({
 
     return (
         <>
-            <div className="dashboardCard border-gradient rounded-md p-4 flex flex-col gap-4 border md:col-span-2">
+            <div
+                ref={sectionRef}
+                className="dashboardCard border-gradient rounded-md p-4 flex flex-col gap-4 border md:col-span-2 transaction-item"
+            >
                 <h3 className="font-semibold text-xl">
                     Transações {`(${getPeriodText(data.filter)})`}
                 </h3>
@@ -78,14 +102,18 @@ const Transactions = async ({
             </div>
 
             <div className="flex flex-col gap-4">
-                <StatCard
-                    title="Taxa de Recusa"
-                    items={data.refusal_rate.items}
-                />
-                <StatCard
-                    title="Origem das Transações"
-                    items={data.origins.items}
-                />
+                <div className="transaction-item">
+                    <StatCard
+                        title="Taxa de Recusa"
+                        items={data.refusal_rate.items}
+                    />
+                </div>
+                <div className="transaction-item">
+                    <StatCard
+                        title="Origem das Transações"
+                        items={data.origins.items}
+                    />
+                </div>
             </div>
         </>
     );

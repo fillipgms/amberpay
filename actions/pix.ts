@@ -79,11 +79,15 @@ export async function ConfirmPix(
             },
         );
 
+        console.log(res.data);
+
         return {
             status: res.status,
             data: res.data,
         };
     } catch (error: any) {
+        console.log(error);
+
         if (axios.isAxiosError(error)) {
             return {
                 status: error.response?.status ?? 500,
