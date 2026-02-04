@@ -34,6 +34,105 @@ export async function getWithdrawl() {
 
 export async function CancelWithdraw(id: string) {}
 
+export async function approveWithdrawal(id: number) {
+    try {
+        const session = await getSession();
+
+        if (!session) {
+            redirect("/login");
+        }
+
+        const res = await axios.post(
+            `${process.env.NEXT_PUBLIC_API_URL}/withdrawal/${id}`,
+            {},
+            {
+                headers: {
+                    Authorization: `Bearer ${session.accessToken}`,
+                },
+            },
+        );
+
+        return {
+            status: res.status,
+            data: res.data,
+        };
+    } catch (error: any) {
+        if (axios.isAxiosError(error)) {
+            return {
+                status: error.response?.status ?? 500,
+                data: error.response?.data ?? {
+                    status: 0,
+                    msg: "Erro inesperado",
+                },
+            };
+        }
+
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
+
+        return {
+            status: 500,
+            data: {
+                status: 0,
+                msg: "Erro interno",
+            },
+        };
+    }
+}
+
+export async function refuseWithdrawal(id: number) {
+    try {
+        const session = await getSession();
+
+        if (!session) {
+            redirect("/login");
+        }
+
+        const res = await axios.delete(
+            `${process.env.NEXT_PUBLIC_API_URL}/withdrawal/${id}`,
+            {
+                headers: {
+                    Authorization: `Bearer ${session.accessToken}`,
+                },
+            },
+        );
+
+        return {
+            status: res.status,
+            data: res.data,
+        };
+    } catch (error: any) {
+        if (axios.isAxiosError(error)) {
+            return {
+                status: error.response?.status ?? 500,
+                data: error.response?.data ?? {
+                    status: 0,
+                    msg: "Erro inesperado",
+                },
+            };
+        }
+
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
+
+        return {
+            status: 500,
+            data: {
+                status: 0,
+                msg: "Erro interno",
+            },
+        };
+    }
+}
+
 export async function getCryptoWallets() {
     try {
         const session = await getSession();

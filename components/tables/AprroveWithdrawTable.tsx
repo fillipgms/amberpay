@@ -1,14 +1,16 @@
 "use client";
 
 import { AgGridReact } from "ag-grid-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
     AllCommunityModule,
     type ColDef,
     ICellRendererParams,
     ModuleRegistry,
 } from "ag-grid-community";
-import { twMerge } from "tailwind-merge";
+import { approveWithdrawal, refuseWithdrawal } from "@/actions/withdrawal";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -27,8 +29,76 @@ export interface Payment {
 export type PaymentsArray = Payment[];
 
 const WithdrawTable = ({ payments }: { payments: PaymentsArray }) => {
+    const router = useRouter();
+    const [loadingId, setLoadingId] = useState<number | null>(null);
+
+    const handleApprove = async (id: number) => {
+        setLoadingId(id);
+        try {
+            const result = await approveWithdrawal(id);
+
+            if (result.data.status === 1) {
+                toast.success(result.data.msg || "Saque aprovado com sucesso!");
+                router.refresh();
+            } else {
+                toast.error(result.data.msg || "Erro ao aprovar saque");
+            }
+        } catch (error) {
+            toast.error("Ocorreu um erro interno");
+        } finally {
+            setLoadingId(null);
+        }
+    };
+
+    const handleRefuse = async (id: number) => {
+        setLoadingId(id);
+        try {
+            const result = await refuseWithdrawal(id);
+
+            if (result.data.status === 1) {
+                toast.success(result.data.msg || "Saque recusado com sucesso!");
+                router.refresh();
+            } else {
+                toast.error(result.data.msg || "Erro ao recusar saque");
+            }
+        } catch (error) {
+            toast.error("Ocorreu um erro interno");
+        } finally {
+            setLoadingId(null);
+        }
+    };
+
     const colDefs = useMemo<ColDef[]>(() => {
         return [
+            {
+                headerName: "Ações",
+                field: "id",
+                pinned: "left",
+                minWidth: 180,
+                maxWidth: 180,
+                cellRenderer: (p: ICellRendererParams) => {
+                    const isLoading = loadingId === p.value;
+
+                    return (
+                        <div className="flex items-center gap-2 h-full w-full">
+                            <button
+                                onClick={() => handleApprove(p.value)}
+                                disabled={isLoading}
+                                className="flex-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-600/50 text-white text-xs font-medium rounded transition-colors"
+                            >
+                                {isLoading ? "..." : "Aprovar"}
+                            </button>
+                            <button
+                                onClick={() => handleRefuse(p.value)}
+                                disabled={isLoading}
+                                className="flex-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 text-white text-xs font-medium rounded transition-colors"
+                            >
+                                {isLoading ? "..." : "Recusar"}
+                            </button>
+                        </div>
+                    );
+                },
+            },
             {
                 headerName: "ID",
                 field: "id",
@@ -151,7 +221,7 @@ const WithdrawTable = ({ payments }: { payments: PaymentsArray }) => {
                 },
             },
         ];
-    }, []);
+    }, [loadingId]);
 
     return (
         <div className="ag-theme-quartz w-full" style={{ height: "auto" }}>
