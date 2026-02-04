@@ -12,6 +12,8 @@ export async function GetDashboardData() {
             redirect("/login");
         }
 
+        console.log(`Bearer ${session.accessToken}`);
+
         const res = await axios.get(
             `${process.env.NEXT_PUBLIC_API_URL}/dashboard`,
             {
@@ -23,6 +25,13 @@ export async function GetDashboardData() {
 
         return res.data;
     } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
+
         throw error;
     }
 }
@@ -46,6 +55,13 @@ export async function GetGrowthData(period = "annual") {
 
         return res.data;
     } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
+
         throw error;
     }
 }
@@ -69,6 +85,13 @@ export async function GetSummaryData(filter = "year") {
 
         return res.data;
     } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
+
         throw error;
     }
 }
@@ -92,6 +115,12 @@ export async function GetTransactionsData(filter = "year") {
 
         return res.data;
     } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
         throw error;
     }
 }
@@ -115,6 +144,13 @@ export async function GetBreakdownData(filter = "year") {
 
         return res.data;
     } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
+
         throw error;
     }
 }
