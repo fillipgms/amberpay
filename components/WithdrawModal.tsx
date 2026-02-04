@@ -27,7 +27,13 @@ import {
 import { cn } from "@/lib/utils";
 import { twMerge } from "tailwind-merge";
 import { initilizePix } from "@/actions/pix";
+import {
+    getCryptoWalletsForWithdrawal,
+    getCryptoQuote,
+    processCryptoWithdrawal,
+} from "@/actions/withdrawal";
 import PixModal from "./PixModal";
+import { ScrollArea } from "./ui/scroll-area";
 
 type WithdrawMethod = "pix" | "crypto";
 type PixKeyType = "cpf" | "cnpj" | "phone" | "email" | "random" | "unknown";
@@ -44,6 +50,23 @@ interface PixResponse {
     status: number;
 }
 
+interface CryptoWallet {
+    id: number;
+    label: string;
+    currency: string;
+    type: string;
+}
+
+interface CryptoQuote {
+    symbol: string;
+    prices: {
+        brl_formatted: string;
+        brl: number;
+        last_updated_at: number;
+    };
+    updated_at: string;
+}
+
 const WithdrawModal = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -56,11 +79,17 @@ const WithdrawModal = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [pixKeyInput, setPixKeyInput] = useState("");
     const [pixType, setPixType] = useState<PixKeyType>("unknown");
-    const [cryptoNetwork, setCryptoNetwork] = useState("");
-    const [cryptoAddress, setCryptoAddress] = useState("");
     const [cryptoAmount, setCryptoAmount] = useState("");
     const [pixError, setPixError] = useState<string | null>(null);
     const [pixResponse, setPixResponse] = useState<PixResponse | null>(null);
+
+    // Crypto states
+    const [cryptoWallets, setCryptoWallets] = useState<CryptoWallet[]>([]);
+    const [selectedWallet, setSelectedWallet] = useState<number | null>(null);
+    const [cryptoQuote, setCryptoQuote] = useState<CryptoQuote | null>(null);
+    const [cryptoError, setCryptoError] = useState<string | null>(null);
+    const [loadingWallets, setLoadingWallets] = useState(false);
+    const [cryptoSuccess, setCryptoSuccess] = useState<string | null>(null);
 
     // Validation functions
     const isValidCPF = (cpf: string): boolean => {
@@ -253,8 +282,55 @@ const WithdrawModal = () => {
         setPixKeyInput(formattedValue);
     };
 
+    // Fetch crypto wallets when crypto method is selected
+    useEffect(() => {
+        if (withdrawMethod === "crypto" && withdrawOpen) {
+            fetchCryptoWallets();
+            fetchCryptoQuote();
+        }
+    }, [withdrawMethod, withdrawOpen]);
+
+    // Fetch quote every 30 seconds when crypto is selected
+    useEffect(() => {
+        if (withdrawMethod === "crypto" && withdrawOpen) {
+            const interval = setInterval(() => {
+                fetchCryptoQuote();
+            }, 30000);
+            return () => clearInterval(interval);
+        }
+    }, [withdrawMethod, withdrawOpen]);
+
+    const fetchCryptoWallets = async () => {
+        setLoadingWallets(true);
+        try {
+            const response = await getCryptoWalletsForWithdrawal();
+            if (response.status === 200 && response.data.status === 1) {
+                setCryptoWallets(response.data.wallets || []);
+            } else {
+                setCryptoError("Erro ao carregar carteiras");
+            }
+        } catch (error) {
+            setCryptoError("Erro ao carregar carteiras");
+        } finally {
+            setLoadingWallets(false);
+        }
+    };
+
+    const fetchCryptoQuote = async () => {
+        try {
+            const response = await getCryptoQuote("USDT");
+            if (response.status === 200) {
+                setCryptoQuote(response.data);
+            }
+        } catch (error) {
+            console.error("Error fetching quote:", error);
+        }
+    };
+
     const handleSubmit = async () => {
         setIsSubmitting(true);
+        setCryptoError(null);
+        setCryptoSuccess(null);
         try {
             if (withdrawMethod === "pix") {
                 const res = await initilizePix(pixType, pixKeyInput);
@@ -264,21 +340,41 @@ const WithdrawModal = () => {
                         "",
                     );
                     setPixResponse(res.data);
-                    // Navigate to pix confirmation step
                     router.push(`?pix=${cleanPixKey}`);
                 } else {
                     setPixType("unknown");
                     setPixError(res.data.message);
                 }
             } else {
-                console.log("Crypto Withdrawal:", {
-                    network: cryptoNetwork,
-                    address: cryptoAddress,
-                    amount: cryptoAmount,
-                });
+                // Crypto withdrawal
+                if (!selectedWallet) {
+                    setCryptoError("Selecione uma carteira");
+                    return;
+                }
+                if (!cryptoAmount || parseFloat(cryptoAmount) <= 0) {
+                    setCryptoError("Informe um valor válido");
+                    return;
+                }
+
+                const amount = parseFloat(cryptoAmount.replace(",", "."));
+                const res = await processCryptoWithdrawal(amount, selectedWallet);
+
+                if (res.status === 200 && res.data.status === 1) {
+                    setCryptoSuccess(res.data.msg);
+                    setCryptoAmount("");
+                    setSelectedWallet(null);
+                    setTimeout(() => {
+                        router.push(window.location.pathname);
+                    }, 2000);
+                } else {
+                    setCryptoError(res.data.msg || "Erro ao processar saque");
+                }
             }
         } catch (error) {
             console.error("Failed to process withdrawal:", error);
+            if (withdrawMethod === "crypto") {
+                setCryptoError("Erro ao processar saque");
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -306,272 +402,326 @@ const WithdrawModal = () => {
                         <CredenzaTitle>Realizar Saque</CredenzaTitle>
                     </CredenzaHeader>
                     <CredenzaBody className="flex-1 overflow-y-auto overflow-x-hidden">
-                        <div className="space-y-6">
-                            <section>
-                                <h3 className="text-sm font-semibold text-foreground/70 mb-4 pb-2 border-b border-border/50">
-                                    Método de Saque
-                                </h3>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setWithdrawMethod("pix")}
-                                        className={cn(
-                                            "p-4 rounded-lg border-2 transition-all duration-200",
-                                            "flex flex-col items-center gap-3",
-                                            "hover:border-primary/50 hover:bg-primary/5",
-                                            withdrawMethod === "pix"
-                                                ? "border-primary bg-primary/10"
-                                                : "border-border/50 bg-card/30",
-                                        )}
-                                    >
-                                        <PixLogoIcon
-                                            size={32}
-                                            weight="duotone"
-                                            className={cn(
-                                                "transition-colors",
-                                                withdrawMethod === "pix"
-                                                    ? "text-primary"
-                                                    : "text-foreground/60",
-                                            )}
-                                        />
-                                        <span
-                                            className={cn(
-                                                "font-semibold text-sm",
-                                                withdrawMethod === "pix"
-                                                    ? "text-foreground"
-                                                    : "text-foreground/70",
-                                            )}
-                                        >
-                                            PIX
-                                        </span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setWithdrawMethod("crypto")
-                                        }
-                                        className={cn(
-                                            "p-4 rounded-lg border-2 transition-all duration-200",
-                                            "flex flex-col items-center gap-3",
-                                            "hover:border-primary/50 hover:bg-primary/5",
-                                            withdrawMethod === "crypto"
-                                                ? "border-primary bg-primary/10"
-                                                : "border-border/50 bg-card/30",
-                                        )}
-                                    >
-                                        <CurrencyBtcIcon
-                                            size={32}
-                                            weight="duotone"
-                                            className={cn(
-                                                "transition-colors",
-                                                withdrawMethod === "crypto"
-                                                    ? "text-primary"
-                                                    : "text-foreground/60",
-                                            )}
-                                        />
-                                        <span
-                                            className={cn(
-                                                "font-semibold text-sm",
-                                                withdrawMethod === "crypto"
-                                                    ? "text-foreground"
-                                                    : "text-foreground/70",
-                                            )}
-                                        >
-                                            Crypto
-                                        </span>
-                                    </button>
-                                </div>
-                            </section>
-                            {withdrawMethod === "pix" && (
-                                <section className="space-y-4">
+                        <ScrollArea>
+                            <div className="space-y-6">
+                                <section>
                                     <h3 className="text-sm font-semibold text-foreground/70 mb-4 pb-2 border-b border-border/50">
-                                        Dados do PIX
+                                        Método de Saque
                                     </h3>
-                                    <div className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Input
-                                                type="text"
-                                                name="pixKey"
-                                                id="pixKey"
-                                                placeholder="CPF, CNPJ, celular, e-mail ou chave aleatória"
-                                                value={pixKeyInput}
-                                                onChange={(e) =>
-                                                    handlePixChange(
-                                                        e.target.value,
-                                                    )
-                                                }
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setWithdrawMethod("pix")
+                                            }
+                                            className={cn(
+                                                "p-4 rounded-lg border-2 transition-all duration-200",
+                                                "flex flex-col items-center gap-3",
+                                                "hover:border-primary/50 hover:bg-primary/5",
+                                                withdrawMethod === "pix"
+                                                    ? "border-primary bg-primary/10"
+                                                    : "border-border/50 bg-card/30",
+                                            )}
+                                        >
+                                            <PixLogoIcon
+                                                size={32}
+                                                weight="duotone"
+                                                className={cn(
+                                                    "transition-colors",
+                                                    withdrawMethod === "pix"
+                                                        ? "text-primary"
+                                                        : "text-foreground/60",
+                                                )}
                                             />
-                                            {pixType !== "unknown" && (
-                                                <p className="text-xs text-primary font-medium pl-1">
-                                                    ✓ {getPixKeyLabel(pixType)}
-                                                </p>
+                                            <span
+                                                className={cn(
+                                                    "font-semibold text-sm",
+                                                    withdrawMethod === "pix"
+                                                        ? "text-foreground"
+                                                        : "text-foreground/70",
+                                                )}
+                                            >
+                                                PIX
+                                            </span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setWithdrawMethod("crypto")
+                                            }
+                                            className={cn(
+                                                "p-4 rounded-lg border-2 transition-all duration-200",
+                                                "flex flex-col items-center gap-3",
+                                                "hover:border-primary/50 hover:bg-primary/5",
+                                                withdrawMethod === "crypto"
+                                                    ? "border-primary bg-primary/10"
+                                                    : "border-border/50 bg-card/30",
                                             )}
-                                            {pixError && (
-                                                <p className="text-xs text-destructive font-medium pl-1">
-                                                    {pixError}
-                                                </p>
-                                            )}
+                                        >
+                                            <CurrencyBtcIcon
+                                                size={32}
+                                                weight="duotone"
+                                                className={cn(
+                                                    "transition-colors",
+                                                    withdrawMethod === "crypto"
+                                                        ? "text-primary"
+                                                        : "text-foreground/60",
+                                                )}
+                                            />
+                                            <span
+                                                className={cn(
+                                                    "font-semibold text-sm",
+                                                    withdrawMethod === "crypto"
+                                                        ? "text-foreground"
+                                                        : "text-foreground/70",
+                                                )}
+                                            >
+                                                Crypto
+                                            </span>
+                                        </button>
+                                    </div>
+                                </section>
+                                {withdrawMethod === "pix" && (
+                                    <section className="space-y-4">
+                                        <h3 className="text-sm font-semibold text-foreground/70 mb-4 pb-2 border-b border-border/50">
+                                            Dados do PIX
+                                        </h3>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <Input
+                                                    type="text"
+                                                    name="pixKey"
+                                                    id="pixKey"
+                                                    placeholder="CPF, CNPJ, celular, e-mail ou chave aleatória"
+                                                    value={pixKeyInput}
+                                                    onChange={(e) =>
+                                                        handlePixChange(
+                                                            e.target.value,
+                                                        )
+                                                    }
+                                                />
+                                                {pixType !== "unknown" && (
+                                                    <p className="text-xs text-primary font-medium pl-1">
+                                                        ✓{" "}
+                                                        {getPixKeyLabel(
+                                                            pixType,
+                                                        )}
+                                                    </p>
+                                                )}
+                                                {pixError && (
+                                                    <p className="text-xs text-destructive font-medium pl-1">
+                                                        {pixError}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t border-border/50 -mx-6 px-6">
+                                                <Button
+                                                    onClick={handleSubmit}
+                                                    disabled={
+                                                        isSubmitting ||
+                                                        pixType === "unknown"
+                                                    }
+                                                    className={twMerge(
+                                                        "w-full",
+                                                        pixType !== "unknown" &&
+                                                            "cursor-pointer",
+                                                    )}
+                                                >
+                                                    {isSubmitting
+                                                        ? "Processando..."
+                                                        : "Prosseguir com PIX"}
+                                                </Button>
+                                            </div>
                                         </div>
+                                    </section>
+                                )}
+                                {withdrawMethod === "crypto" && (
+                                    <>
+                                        <section className="space-y-4">
+                                            <h3 className="text-sm font-semibold text-foreground/70 mb-4 pb-2 border-b border-border/50">
+                                                Dados da Crypto
+                                            </h3>
+
+                                            {loadingWallets ? (
+                                                <div className="text-center py-8 text-foreground/60">
+                                                    Carregando carteiras...
+                                                </div>
+                                            ) : cryptoWallets.length === 0 ? (
+                                                <div className="text-center py-8">
+                                                    <p className="text-foreground/60 mb-4">
+                                                        Nenhuma carteira cadastrada
+                                                    </p>
+                                                    <p className="text-sm text-foreground/50">
+                                                        Cadastre uma carteira para
+                                                        realizar saques em crypto
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-[140px_1fr] gap-2 md:gap-4 items-center">
+                                                        <label
+                                                            htmlFor="cryptoWallet"
+                                                            className="text-sm font-medium text-foreground/70"
+                                                        >
+                                                            Carteira
+                                                        </label>
+                                                        <Select
+                                                            value={
+                                                                selectedWallet?.toString() ||
+                                                                ""
+                                                            }
+                                                            onValueChange={(
+                                                                value,
+                                                            ) =>
+                                                                setSelectedWallet(
+                                                                    parseInt(
+                                                                        value,
+                                                                    ),
+                                                                )
+                                                            }
+                                                        >
+                                                            <SelectTrigger
+                                                                id="cryptoWallet"
+                                                                className="w-full"
+                                                            >
+                                                                <SelectValue placeholder="Selecione uma carteira" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {cryptoWallets.map(
+                                                                    (wallet) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                wallet.id
+                                                                            }
+                                                                            value={wallet.id.toString()}
+                                                                        >
+                                                                            {
+                                                                                wallet.label
+                                                                            }{" "}
+                                                                            ({wallet.currency}{" "}
+                                                                            -{" "}
+                                                                            {
+                                                                                wallet.type
+                                                                            }
+                                                                            )
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-[140px_1fr] gap-2 md:gap-4 items-center">
+                                                        <label
+                                                            htmlFor="cryptoAmount"
+                                                            className="text-sm font-medium text-foreground/70"
+                                                        >
+                                                            Valor (BRL)
+                                                        </label>
+                                                        <div className="relative">
+                                                            <Input
+                                                                type="text"
+                                                                name="cryptoAmount"
+                                                                id="cryptoAmount"
+                                                                placeholder="0,00"
+                                                                value={
+                                                                    cryptoAmount
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setCryptoAmount(
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                icon={
+                                                                    <CurrencyCircleDollarIcon
+                                                                        size={20}
+                                                                        weight="duotone"
+                                                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/50"
+                                                                    />
+                                                                }
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    {cryptoQuote && cryptoAmount && (
+                                                        <div className="mt-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                                                            <div className="flex items-center justify-between text-sm mb-2">
+                                                                <span className="text-foreground/70">
+                                                                    Cotação USDT
+                                                                </span>
+                                                                <span className="font-semibold text-foreground">
+                                                                    R${" "}
+                                                                    {
+                                                                        cryptoQuote
+                                                                            .prices
+                                                                            .brl_formatted
+                                                                    }
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center justify-between text-sm pt-2 border-t border-border/30">
+                                                                <span className="font-medium text-foreground/70">
+                                                                    Você receberá
+                                                                </span>
+                                                                <span className="font-bold text-primary text-base">
+                                                                    {(
+                                                                        parseFloat(
+                                                                            cryptoAmount.replace(
+                                                                                ",",
+                                                                                ".",
+                                                                            ),
+                                                                        ) /
+                                                                        cryptoQuote
+                                                                            .prices
+                                                                            .brl
+                                                                    ).toFixed(
+                                                                        2,
+                                                                    )}{" "}
+                                                                    USDT
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {cryptoError && (
+                                                        <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                                                            <p className="text-sm text-destructive font-medium">
+                                                                {cryptoError}
+                                                            </p>
+                                                        </div>
+                                                    )}
+
+                                                    {cryptoSuccess && (
+                                                        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+                                                            <p className="text-sm text-green-600 font-medium">
+                                                                {cryptoSuccess}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </section>
 
                                         <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t border-border/50 -mx-6 px-6">
                                             <Button
                                                 onClick={handleSubmit}
                                                 disabled={
                                                     isSubmitting ||
-                                                    pixType === "unknown"
+                                                    !selectedWallet ||
+                                                    !cryptoAmount ||
+                                                    cryptoWallets.length === 0
                                                 }
-                                                className={twMerge(
-                                                    "w-full",
-                                                    pixType !== "unknown" &&
-                                                        "cursor-pointer",
-                                                )}
+                                                className="w-full cursor-pointer"
                                             >
                                                 {isSubmitting
                                                     ? "Processando..."
-                                                    : "Prosseguir com PIX"}
+                                                    : "Confirmar Saque"}
                                             </Button>
                                         </div>
-                                    </div>
-                                </section>
-                            )}
-                            {withdrawMethod === "crypto" && (
-                                <>
-                                    <section className="space-y-4">
-                                        <h3 className="text-sm font-semibold text-foreground/70 mb-4 pb-2 border-b border-border/50">
-                                            Dados da Crypto
-                                        </h3>
-                                        <div className="space-y-4">
-                                            <div className="grid grid-cols-1 md:grid-cols-[140px_1fr] gap-2 md:gap-4 items-center">
-                                                <label
-                                                    htmlFor="cryptoNetwork"
-                                                    className="text-sm font-medium text-foreground/70"
-                                                >
-                                                    Rede
-                                                </label>
-                                                <Select
-                                                    value={cryptoNetwork}
-                                                    onValueChange={
-                                                        setCryptoNetwork
-                                                    }
-                                                >
-                                                    <SelectTrigger
-                                                        id="cryptoNetwork"
-                                                        className="w-full"
-                                                    >
-                                                        <SelectValue placeholder="Selecione a rede" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="btc">
-                                                            Bitcoin (BTC)
-                                                        </SelectItem>
-                                                        <SelectItem value="eth">
-                                                            Ethereum (ETH)
-                                                        </SelectItem>
-                                                        <SelectItem value="usdt-trc20">
-                                                            USDT (TRC20)
-                                                        </SelectItem>
-                                                        <SelectItem value="usdt-erc20">
-                                                            USDT (ERC20)
-                                                        </SelectItem>
-                                                        <SelectItem value="bnb">
-                                                            BNB (BEP20)
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-[140px_1fr] gap-2 md:gap-4 items-center">
-                                                <label
-                                                    htmlFor="cryptoAddress"
-                                                    className="text-sm font-medium text-foreground/70"
-                                                >
-                                                    Endereço
-                                                </label>
-                                                <Input
-                                                    type="text"
-                                                    name="cryptoAddress"
-                                                    id="cryptoAddress"
-                                                    placeholder="Endereço da carteira"
-                                                    defaultValue={cryptoAddress}
-                                                    onChange={(e) =>
-                                                        setCryptoAddress(
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                />
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-[140px_1fr] gap-2 md:gap-4 items-center">
-                                                <label
-                                                    htmlFor="cryptoAmount"
-                                                    className="text-sm font-medium text-foreground/70"
-                                                >
-                                                    Valor
-                                                </label>
-                                                <div className="relative">
-                                                    <Input
-                                                        type="text"
-                                                        name="cryptoAmount"
-                                                        id="cryptoAmount"
-                                                        placeholder="0,00"
-                                                        defaultValue={
-                                                            cryptoAmount
-                                                        }
-                                                        onChange={(e) =>
-                                                            setCryptoAmount(
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        icon={
-                                                            <CurrencyCircleDollarIcon
-                                                                size={20}
-                                                                weight="duotone"
-                                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/50"
-                                                            />
-                                                        }
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="mt-4 p-4 rounded-lg bg-background/50 border border-border/50">
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="text-foreground/70">
-                                                    Taxa de rede
-                                                </span>
-                                                <span className="font-semibold text-foreground">
-                                                    R$ 0,00
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-sm mt-2 pt-2 border-t border-border/30">
-                                                <span className="font-medium text-foreground/70">
-                                                    Você receberá
-                                                </span>
-                                                <span className="font-bold text-foreground text-base">
-                                                    R${" "}
-                                                    {cryptoAmount
-                                                        ? parseFloat(
-                                                              cryptoAmount.replace(
-                                                                  ",",
-                                                                  ".",
-                                                              ),
-                                                          ).toFixed(2)
-                                                        : "0,00"}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </section>
-                                    <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t border-border/50 -mx-6 px-6">
-                                        <Button
-                                            onClick={handleSubmit}
-                                            disabled={isSubmitting}
-                                            className="w-full cursor-pointer"
-                                        >
-                                            {isSubmitting
-                                                ? "Processando..."
-                                                : "Confirmar Saque"}
-                                        </Button>
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </ScrollArea>
                     </CredenzaBody>
                 </CredenzaContent>
             </Credenza>

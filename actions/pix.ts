@@ -39,6 +39,13 @@ export async function initilizePix(pix_type: string, pix_key: string) {
             };
         }
 
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
+
         return {
             status: 500,
             data: {
@@ -51,9 +58,9 @@ export async function initilizePix(pix_type: string, pix_key: string) {
 
 export async function ConfirmPix(
     amount: number,
-    document: number,
+    document: string,
     endId: string,
-    description = "",
+    description = "tst",
 ) {
     try {
         const session = await getSession();
@@ -85,6 +92,13 @@ export async function ConfirmPix(
                     msg: "Erro inesperado",
                 },
             };
+        }
+
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
         }
 
         return {

@@ -22,7 +22,14 @@ export async function getCredentialsList({ page = 1 }: { page: number }) {
         );
 
         return res.data;
-    } catch (error) {}
+    } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
+    }
 }
 
 export async function deleteCredential(id: number) {
@@ -41,7 +48,14 @@ export async function deleteCredential(id: number) {
                 },
             },
         );
-    } catch (error) {}
+    } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
+    }
 }
 
 export async function createCredential(data: { descricao: string }) {
@@ -64,6 +78,13 @@ export async function createCredential(data: { descricao: string }) {
 
         return res.data;
     } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
+
         return {
             error:
                 error instanceof Error

@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import { getSession } from "./auth";
+import { redirect } from "next/navigation";
 
 export async function getMe() {
     try {
@@ -21,6 +22,12 @@ export async function getMe() {
 
         return response.data;
     } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
         return null;
     }
 }
@@ -43,6 +50,12 @@ export async function getDevicesData() {
 
         return response.data;
     } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
         return null;
     }
 }
@@ -62,6 +75,12 @@ export async function deleteDevice(id: number) {
 
         return true;
     } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
         return false;
     }
 }
@@ -85,6 +104,13 @@ export async function updateMe(data: { auto_approve_withdrawal: boolean }) {
 
         return response.data;
     } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
+
         return {
             error:
                 error instanceof Error

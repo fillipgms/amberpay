@@ -21,7 +21,9 @@ import {
     ArrowsDownUpIcon,
     KeyIcon,
     LockKeyIcon,
+    ThumbsUpIcon,
     UserIcon,
+    WalletIcon,
 } from "@phosphor-icons/react";
 import {
     DropdownMenu,
@@ -30,6 +32,7 @@ import {
     DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { CaretUpIcon } from "@phosphor-icons/react/dist/ssr";
+import CryptoWalletModal from "./CryptoWalletModal";
 import DevicesModal from "./DevicesModal";
 import ConfigsModal from "./ConfigsModal";
 import { logOut } from "@/actions/auth";
@@ -41,6 +44,7 @@ const items = [
     { title: "Transações", url: "/transactions", icon: ArrowsDownUpIcon },
     { title: "Credenciais", url: "/credentials", icon: KeyIcon },
     { title: "Ip WhiteList", url: "/whitelist", icon: LockKeyIcon },
+    { title: "Aprovar Saques", url: "/approve", icon: ThumbsUpIcon },
 ];
 
 const AppSidebar = () => {
@@ -124,6 +128,11 @@ const AppSidebar = () => {
                                     onSelect={(e) => e.preventDefault()}
                                 >
                                     <DevicesModal />
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onSelect={(e) => e.preventDefault()}
+                                >
+                                    <CryptoWalletModal />
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={handleLogout}>
                                     <span className="flex items-center gap-2">

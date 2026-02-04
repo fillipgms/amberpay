@@ -19,7 +19,14 @@ export async function getIpWhitelist() {
         });
 
         return res.data;
-    } catch (error) {}
+    } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
+    }
 }
 
 export async function addIpToWhitelist(ip: string) {
@@ -42,6 +49,12 @@ export async function addIpToWhitelist(ip: string) {
 
         return res.data;
     } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
         return { error: "Erro ao adicionar IP à whitelist." };
     }
 }
@@ -64,5 +77,12 @@ export async function removeIpFromWhitelist(id: number) {
         );
 
         return res.data;
-    } catch (error) {}
+    } catch (error) {
+        if (
+            axios.isAxiosError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
+            redirect("/login");
+        }
+    }
 }

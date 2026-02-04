@@ -1,4 +1,6 @@
 import { GetDashboardData } from "@/actions/dashboard";
+import AddBalanceModal from "@/components/AddBalanceModal";
+import CryptoWalletModal from "@/components/CryptoWalletModal";
 import { Button } from "@/components/ui/button";
 import WithdrawModal from "@/components/WithdrawModal";
 import ArrowsOppositeDirection from "@/public/icons/arrows-opposite-direction";
@@ -61,14 +63,7 @@ const MainInfo = async () => {
                 </div>
                 <div className="flex gap-4 flex-col md:flex-row">
                     <WithdrawModal />
-                    <Button
-                        className="action-button"
-                        variant="outline"
-                        disabled
-                    >
-                        <ArrowsOppositeDirection className="text-foreground" />
-                        Adicionar Saldo
-                    </Button>
+                    <AddBalanceModal />
                 </div>
             </div>
         </section>
