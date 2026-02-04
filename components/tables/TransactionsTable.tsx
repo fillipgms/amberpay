@@ -1,7 +1,7 @@
 "use client";
 
 import { AgGridReact } from "ag-grid-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
     AllCommunityModule,
     type ColDef,
@@ -9,7 +9,9 @@ import {
     ModuleRegistry,
 } from "ag-grid-community";
 import { twMerge } from "tailwind-merge";
-import { CheckIcon, ClockIcon, XIcon } from "@phosphor-icons/react";
+import { CheckIcon, ClockIcon, XIcon, DownloadSimple } from "@phosphor-icons/react";
+import { generateTransactionPDF } from "@/lib/pdf-utils";
+import { toast } from "sonner";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -43,6 +45,25 @@ const TransactionsTable = ({
 }: {
     transactions: TransactionsArray;
 }) => {
+    const [loadingPDF, setLoadingPDF] = useState<string | null>(null);
+
+    const handleDownloadPDF = async (transaction: Transaction) => {
+        setLoadingPDF(transaction.id);
+        toast.loading("Gerando comprovante...", { id: transaction.id });
+
+        const result = await generateTransactionPDF(transaction);
+
+        if (result.success) {
+            toast.success("Comprovante aberto em nova aba!", { id: transaction.id });
+        } else {
+            toast.error("Erro ao gerar comprovante. Verifique se pop-ups estão permitidos.", {
+                id: transaction.id,
+            });
+        }
+
+        setLoadingPDF(null);
+    };
+
     const colDefs = useMemo<ColDef[]>(() => {
         return [
             {
@@ -303,8 +324,42 @@ const TransactionsTable = ({
                     );
                 },
             },
+            {
+                headerName: "Ações",
+                pinned: "right",
+                suppressMovable: true,
+                minWidth: 100,
+                maxWidth: 100,
+                cellRenderer: (p: ICellRendererParams) => {
+                    const transaction = p.data as Transaction;
+                    const isLoading = loadingPDF === transaction.id;
+
+                    return (
+                        <div className="flex items-center justify-center h-full w-full">
+                            <button
+                                onClick={() => handleDownloadPDF(transaction)}
+                                disabled={isLoading}
+                                className={twMerge(
+                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
+                                    "bg-primary/10 text-primary hover:bg-primary/20",
+                                    "disabled:opacity-50 disabled:cursor-not-allowed",
+                                    "focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                )}
+                                title="Abrir comprovante em PDF"
+                            >
+                                <DownloadSimple
+                                    size={16}
+                                    weight="bold"
+                                    className={isLoading ? "animate-pulse" : ""}
+                                />
+                                <span>PDF</span>
+                            </button>
+                        </div>
+                    );
+                },
+            },
         ];
-    }, []);
+    }, [loadingPDF]);
 
     return (
         <div className="ag-theme-quartz w-full" style={{ height: "auto" }}>
