@@ -11,7 +11,7 @@ import { Button } from "./ui/button";
 import ArrowsOppositeDirection from "@/public/icons/arrows-opposite-direction";
 import { ScrollArea } from "./ui/scroll-area";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
     createTransaction,
     checkTransactionStatus,
@@ -19,10 +19,15 @@ import {
 } from "@/actions/transactions";
 import { toast } from "sonner";
 import Image from "next/image";
+import gsap from "gsap";
+import { useDashboard } from "@/contexts/DashboardContext";
 
 const AddBalanceModal = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const successRef = useRef<HTMLDivElement>(null);
+    const qrCodeRef = useRef<HTMLDivElement>(null);
+    const { refreshDashboard } = useDashboard();
 
     const [displayValue, setDisplayValue] = useState("");
     const [floatValue, setFloatValue] = useState(0.0);
@@ -110,7 +115,34 @@ const AddBalanceModal = () => {
         setIsPolling(true);
     };
 
-    // Polling effect
+    // Animate QR code when it appears
+    useEffect(() => {
+        if (transactionData && qrCodeRef.current) {
+            gsap.fromTo(
+                qrCodeRef.current,
+                { scale: 0.8, opacity: 0 },
+                { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(1.4)" }
+            );
+        }
+    }, [transactionData]);
+
+    // Animate success message
+    useEffect(() => {
+        if (pollingStatus === "approved" && successRef.current) {
+            gsap.fromTo(
+                successRef.current,
+                { scale: 0.5, opacity: 0 },
+                {
+                    scale: 1,
+                    opacity: 1,
+                    duration: 0.6,
+                    ease: "back.out(2)"
+                }
+            );
+        }
+    }, [pollingStatus]);
+
+    // Polling effect - increased interval to reduce API calls
     useEffect(() => {
         if (!isPolling || !transactionData) return;
 
@@ -123,6 +155,10 @@ const AddBalanceModal = () => {
                 setPollingStatus("approved");
                 setIsPolling(false);
                 toast.success("Pagamento aprovado com sucesso!");
+
+                // Refresh dashboard to show new balance with smooth animation
+                refreshDashboard();
+
                 setTimeout(() => {
                     router.push(window.location.pathname);
                     resetForm();
@@ -132,10 +168,10 @@ const AddBalanceModal = () => {
                 setIsPolling(false);
                 toast.error("Pagamento recusado");
             }
-        }, 3000);
+        }, 5000); // Increased from 3s to 5s to reduce API calls
 
         return () => clearInterval(pollInterval);
-    }, [isPolling, transactionData, router]);
+    }, [isPolling, transactionData, router, refreshDashboard]);
 
     const handleCopyQRCode = () => {
         if (transactionData?.qrcode) {
@@ -238,7 +274,10 @@ const AddBalanceModal = () => {
                                 ) : (
                                     <>
                                         <div className="flex flex-col items-center gap-4">
-                                            <div className="p-4 bg-white rounded-lg">
+                                            <div
+                                                ref={qrCodeRef}
+                                                className="p-4 bg-white rounded-lg"
+                                            >
                                                 <Image
                                                     src={`data:image/png;base64,${transactionData.qrcode_base64}`}
                                                     alt="QR Code PIX"
@@ -278,7 +317,10 @@ const AddBalanceModal = () => {
                                             )}
 
                                             {pollingStatus === "approved" && (
-                                                <div className="text-sm text-green-600 font-medium">
+                                                <div
+                                                    ref={successRef}
+                                                    className="text-sm text-green-600 font-medium"
+                                                >
                                                     ✓ Pagamento aprovado!
                                                 </div>
                                             )}

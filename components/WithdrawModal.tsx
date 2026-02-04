@@ -1,6 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import gsap from "gsap";
+import { useDashboard } from "@/contexts/DashboardContext";
 import {
     Credenza,
     CredenzaBody,
@@ -70,6 +72,9 @@ interface CryptoQuote {
 const WithdrawModal = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const cryptoSuccessRef = useRef<HTMLDivElement>(null);
+    const pixErrorRef = useRef<HTMLParagraphElement>(null);
+    const { refreshDashboard } = useDashboard();
 
     // URL state determines which modal is open
     const withdrawOpen = searchParams.get("withdraw") === "true";
@@ -282,6 +287,39 @@ const WithdrawModal = () => {
         setPixKeyInput(formattedValue);
     };
 
+    // Animate crypto success message
+    useEffect(() => {
+        if (cryptoSuccess && cryptoSuccessRef.current) {
+            gsap.fromTo(
+                cryptoSuccessRef.current,
+                { scale: 0.5, opacity: 0, y: -10 },
+                {
+                    scale: 1,
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.6,
+                    ease: "back.out(2)",
+                },
+            );
+        }
+    }, [cryptoSuccess]);
+
+    // Animate PIX error message
+    useEffect(() => {
+        if (pixError && pixErrorRef.current) {
+            gsap.fromTo(
+                pixErrorRef.current,
+                { x: -10, opacity: 0 },
+                {
+                    x: 0,
+                    opacity: 1,
+                    duration: 0.4,
+                    ease: "power2.out",
+                },
+            );
+        }
+    }, [pixError]);
+
     // Fetch crypto wallets when crypto method is selected
     useEffect(() => {
         if (withdrawMethod === "crypto" && withdrawOpen) {
@@ -290,12 +328,12 @@ const WithdrawModal = () => {
         }
     }, [withdrawMethod, withdrawOpen]);
 
-    // Fetch quote every 30 seconds when crypto is selected
+    // Fetch quote every 60 seconds when crypto is selected (reduced from 30s)
     useEffect(() => {
         if (withdrawMethod === "crypto" && withdrawOpen) {
             const interval = setInterval(() => {
                 fetchCryptoQuote();
-            }, 30000);
+            }, 60000); // Increased from 30s to 60s to reduce API calls
             return () => clearInterval(interval);
         }
     }, [withdrawMethod, withdrawOpen]);
@@ -331,10 +369,11 @@ const WithdrawModal = () => {
         setIsSubmitting(true);
         setCryptoError(null);
         setCryptoSuccess(null);
+        setPixError(null);
         try {
             if (withdrawMethod === "pix") {
                 const res = await initilizePix(pixType, pixKeyInput);
-                if (res && res.status === 200) {
+                if (res && res.status === 200 && res.data?.status === 1) {
                     const cleanPixKey = pixKeyInput.replace(
                         /[^a-zA-Z0-9@]/g,
                         "",
@@ -342,27 +381,41 @@ const WithdrawModal = () => {
                     setPixResponse(res.data);
                     router.push(`?pix=${cleanPixKey}`);
                 } else {
-                    setPixType("unknown");
-                    setPixError(res.data.message);
+                    // Don't reset pixType - keep it so user can retry with same input
+                    const errorMsg =
+                        res?.data?.msg ||
+                        res?.data?.message ||
+                        "Erro ao processar PIX. Verifique a chave e tente novamente.";
+                    setPixError(errorMsg);
+                    setIsSubmitting(false);
+                    return;
                 }
             } else {
                 // Crypto withdrawal
                 if (!selectedWallet) {
                     setCryptoError("Selecione uma carteira");
+                    setIsSubmitting(false);
                     return;
                 }
                 if (!cryptoAmount || parseFloat(cryptoAmount) <= 0) {
                     setCryptoError("Informe um valor válido");
+                    setIsSubmitting(false);
                     return;
                 }
 
                 const amount = parseFloat(cryptoAmount.replace(",", "."));
-                const res = await processCryptoWithdrawal(amount, selectedWallet);
+                const res = await processCryptoWithdrawal(
+                    amount,
+                    selectedWallet,
+                );
 
                 if (res.status === 200 && res.data.status === 1) {
                     setCryptoSuccess(res.data.msg);
                     setCryptoAmount("");
                     setSelectedWallet(null);
+
+                    refreshDashboard();
+
                     setTimeout(() => {
                         router.push(window.location.pathname);
                     }, 2000);
@@ -374,6 +427,8 @@ const WithdrawModal = () => {
             console.error("Failed to process withdrawal:", error);
             if (withdrawMethod === "crypto") {
                 setCryptoError("Erro ao processar saque");
+            } else {
+                setPixError("Erro ao processar PIX");
             }
         } finally {
             setIsSubmitting(false);
@@ -509,7 +564,10 @@ const WithdrawModal = () => {
                                                     </p>
                                                 )}
                                                 {pixError && (
-                                                    <p className="text-xs text-destructive font-medium pl-1">
+                                                    <p
+                                                        ref={pixErrorRef}
+                                                        className="text-xs text-destructive font-medium pl-1"
+                                                    >
                                                         {pixError}
                                                     </p>
                                                 )}
@@ -550,11 +608,13 @@ const WithdrawModal = () => {
                                             ) : cryptoWallets.length === 0 ? (
                                                 <div className="text-center py-8">
                                                     <p className="text-foreground/60 mb-4">
-                                                        Nenhuma carteira cadastrada
+                                                        Nenhuma carteira
+                                                        cadastrada
                                                     </p>
                                                     <p className="text-sm text-foreground/50">
-                                                        Cadastre uma carteira para
-                                                        realizar saques em crypto
+                                                        Cadastre uma carteira
+                                                        para realizar saques em
+                                                        crypto
                                                     </p>
                                                 </div>
                                             ) : (
@@ -589,7 +649,9 @@ const WithdrawModal = () => {
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 {cryptoWallets.map(
-                                                                    (wallet) => (
+                                                                    (
+                                                                        wallet,
+                                                                    ) => (
                                                                         <SelectItem
                                                                             key={
                                                                                 wallet.id
@@ -599,7 +661,10 @@ const WithdrawModal = () => {
                                                                             {
                                                                                 wallet.label
                                                                             }{" "}
-                                                                            ({wallet.currency}{" "}
+                                                                            (
+                                                                            {
+                                                                                wallet.currency
+                                                                            }{" "}
                                                                             -{" "}
                                                                             {
                                                                                 wallet.type
@@ -635,7 +700,9 @@ const WithdrawModal = () => {
                                                                 }
                                                                 icon={
                                                                     <CurrencyCircleDollarIcon
-                                                                        size={20}
+                                                                        size={
+                                                                            20
+                                                                        }
                                                                         weight="duotone"
                                                                         className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/50"
                                                                     />
@@ -644,44 +711,47 @@ const WithdrawModal = () => {
                                                         </div>
                                                     </div>
 
-                                                    {cryptoQuote && cryptoAmount && (
-                                                        <div className="mt-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
-                                                            <div className="flex items-center justify-between text-sm mb-2">
-                                                                <span className="text-foreground/70">
-                                                                    Cotação USDT
-                                                                </span>
-                                                                <span className="font-semibold text-foreground">
-                                                                    R${" "}
-                                                                    {
-                                                                        cryptoQuote
-                                                                            .prices
-                                                                            .brl_formatted
-                                                                    }
-                                                                </span>
+                                                    {cryptoQuote &&
+                                                        cryptoAmount && (
+                                                            <div className="mt-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
+                                                                <div className="flex items-center justify-between text-sm mb-2">
+                                                                    <span className="text-foreground/70">
+                                                                        Cotação
+                                                                        USDT
+                                                                    </span>
+                                                                    <span className="font-semibold text-foreground">
+                                                                        R${" "}
+                                                                        {
+                                                                            cryptoQuote
+                                                                                .prices
+                                                                                .brl_formatted
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center justify-between text-sm pt-2 border-t border-border/30">
+                                                                    <span className="font-medium text-foreground/70">
+                                                                        Você
+                                                                        receberá
+                                                                    </span>
+                                                                    <span className="font-bold text-primary text-base">
+                                                                        {(
+                                                                            parseFloat(
+                                                                                cryptoAmount.replace(
+                                                                                    ",",
+                                                                                    ".",
+                                                                                ),
+                                                                            ) /
+                                                                            cryptoQuote
+                                                                                .prices
+                                                                                .brl
+                                                                        ).toFixed(
+                                                                            2,
+                                                                        )}{" "}
+                                                                        USDT
+                                                                    </span>
+                                                                </div>
                                                             </div>
-                                                            <div className="flex items-center justify-between text-sm pt-2 border-t border-border/30">
-                                                                <span className="font-medium text-foreground/70">
-                                                                    Você receberá
-                                                                </span>
-                                                                <span className="font-bold text-primary text-base">
-                                                                    {(
-                                                                        parseFloat(
-                                                                            cryptoAmount.replace(
-                                                                                ",",
-                                                                                ".",
-                                                                            ),
-                                                                        ) /
-                                                                        cryptoQuote
-                                                                            .prices
-                                                                            .brl
-                                                                    ).toFixed(
-                                                                        2,
-                                                                    )}{" "}
-                                                                    USDT
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    )}
+                                                        )}
 
                                                     {cryptoError && (
                                                         <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30">
@@ -692,7 +762,12 @@ const WithdrawModal = () => {
                                                     )}
 
                                                     {cryptoSuccess && (
-                                                        <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+                                                        <div
+                                                            ref={
+                                                                cryptoSuccessRef
+                                                            }
+                                                            className="p-3 rounded-lg bg-green-500/10 border border-green-500/30"
+                                                        >
                                                             <p className="text-sm text-green-600 font-medium">
                                                                 {cryptoSuccess}
                                                             </p>

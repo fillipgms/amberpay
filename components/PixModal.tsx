@@ -12,6 +12,7 @@ import {
 import { ConfirmPix } from "@/actions/pix";
 import { ScrollArea } from "./ui/scroll-area";
 import { toast } from "sonner";
+import { useDashboard } from "@/contexts/DashboardContext";
 
 interface PixResponse {
     deposit_minim: number;
@@ -33,6 +34,7 @@ interface PixModalProps {
 const PixModal = ({ pixKey, response }: PixModalProps) => {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { refreshDashboard } = useDashboard();
 
     // State for formatted display value and actual float value
     const [displayValue, setDisplayValue] = useState("");
@@ -70,7 +72,6 @@ const PixModal = ({ pixKey, response }: PixModalProps) => {
 
     const handleOpenChange = (open: boolean) => {
         if (!open) {
-            // Go back to withdraw modal
             router.push("?withdraw=true");
         }
     };
@@ -87,9 +88,9 @@ const PixModal = ({ pixKey, response }: PixModalProps) => {
             setError(res.data.message || res.data.msg);
         } else {
             toast.success("Pagamento Realizado com Sucesso");
+            refreshDashboard();
+            router.replace(window.location.pathname);
         }
-
-        router.replace(window.location.pathname);
     };
 
     const handleCancel = () => {
