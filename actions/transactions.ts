@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "./auth";
 import axios from "axios";
+import { unstable_cache } from "next/cache";
 
 export interface TransactionFilters {
     page?: number;
@@ -33,15 +34,29 @@ export async function getTransactions(filters: TransactionFilters = {}) {
         if (filters.search) params.set("search", filters.search);
 
         const queryString = params.toString();
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions${queryString ? `?${queryString}` : ""}`;
 
-        const res = await axios.get(url, {
-            headers: {
-                Authorization: `Bearer ${session.accessToken}`,
+        // Create a cache key based on all filter parameters
+        const cacheKey = `transactions-${queryString || "default"}`;
+
+        // Cache transactions data for 30 seconds per filter combination
+        const getCachedTransactions = unstable_cache(
+            async (accessToken: string, query: string) => {
+                const url = `${process.env.NEXT_PUBLIC_API_URL}/transactions${query ? `?${query}` : ""}`;
+                const res = await axios.get(url, {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                });
+                return res.data;
             },
-        });
+            [cacheKey],
+            {
+                revalidate: 30, // Cache for 30 seconds
+                tags: ["transactions", cacheKey],
+            }
+        );
 
-        return res.data;
+        return await getCachedTransactions(session.accessToken, queryString);
     } catch (error) {
         if (
             axios.isAxiosError(error) &&

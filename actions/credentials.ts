@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "./auth";
 import axios from "axios";
+import { unstable_cache } from "next/cache";
 
 export async function getCredentialsList({ page = 1 }: { page: number }) {
     try {
@@ -12,16 +13,27 @@ export async function getCredentialsList({ page = 1 }: { page: number }) {
             redirect("/login");
         }
 
-        const res = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/credentials?page=${page}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${session.accessToken}`,
-                },
+        // Cache credentials list for 60 seconds per page to reduce API calls
+        const getCachedCredentials = unstable_cache(
+            async (accessToken: string, pageNum: number) => {
+                const res = await axios.get(
+                    `${process.env.NEXT_PUBLIC_API_URL}/credentials?page=${pageNum}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                    },
+                );
+                return res.data;
             },
+            [`credentials-list-${page}`],
+            {
+                revalidate: 60, // Cache for 60 seconds
+                tags: ["credentials", `credentials-page-${page}`],
+            }
         );
 
-        return res.data;
+        return await getCachedCredentials(session.accessToken, page);
     } catch (error) {
         if (
             axios.isAxiosError(error) &&

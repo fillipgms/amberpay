@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "./auth";
 import axios from "axios";
+import { unstable_cache } from "next/cache";
 
 export async function getWithdrawl() {
     try {
@@ -12,16 +13,27 @@ export async function getWithdrawl() {
             redirect("/login");
         }
 
-        const res = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/withdrawal`,
-            {
-                headers: {
-                    Authorization: `Bearer ${session.accessToken}`,
-                },
+        // Cache withdrawal data for 30 seconds to reduce API calls
+        const getCachedWithdrawals = unstable_cache(
+            async (accessToken: string) => {
+                const res = await axios.get(
+                    `${process.env.NEXT_PUBLIC_API_URL}/withdrawal`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                        },
+                    },
+                );
+                return res.data;
             },
+            ["withdrawals-list"],
+            {
+                revalidate: 30, // Cache for 30 seconds
+                tags: ["withdrawals"],
+            }
         );
 
-        return res.data;
+        return await getCachedWithdrawals(session.accessToken);
     } catch (error) {
         if (
             axios.isAxiosError(error) &&

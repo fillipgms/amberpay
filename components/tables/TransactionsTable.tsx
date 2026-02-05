@@ -9,7 +9,12 @@ import {
     ModuleRegistry,
 } from "ag-grid-community";
 import { twMerge } from "tailwind-merge";
-import { CheckIcon, ClockIcon, XIcon, DownloadSimple } from "@phosphor-icons/react";
+import {
+    CheckIcon,
+    ClockIcon,
+    XIcon,
+    DownloadSimple,
+} from "@phosphor-icons/react";
 import { generateTransactionPDF } from "@/lib/pdf-utils";
 import { toast } from "sonner";
 
@@ -54,11 +59,16 @@ const TransactionsTable = ({
         const result = await generateTransactionPDF(transaction);
 
         if (result.success) {
-            toast.success("Comprovante aberto em nova aba!", { id: transaction.id });
-        } else {
-            toast.error("Erro ao gerar comprovante. Verifique se pop-ups estão permitidos.", {
+            toast.success("Comprovante aberto em nova aba!", {
                 id: transaction.id,
             });
+        } else {
+            toast.error(
+                "Erro ao gerar comprovante. Verifique se pop-ups estão permitidos.",
+                {
+                    id: transaction.id,
+                },
+            );
         }
 
         setLoadingPDF(null);
@@ -100,7 +110,7 @@ const TransactionsTable = ({
                 headerName: "Tipo",
                 field: "type",
                 suppressMovable: true,
-                minWidth: 110,
+                width: 100,
                 sortable: true,
                 cellRenderer: (p: ICellRendererParams) => {
                     const isEntrada = p.value === "Entrada";
@@ -219,12 +229,12 @@ const TransactionsTable = ({
                 headerName: "Origem",
                 field: "origin",
                 suppressMovable: true,
-                minWidth: 100,
+                width: 100,
                 sortable: true,
                 cellRenderer: (p: ICellRendererParams) => {
                     return (
                         <div className="flex items-center justify-center h-full w-full">
-                            <span className="px-2 py-1 bg-foreground/5 rounded text-xs font-medium">
+                            <span className="px-2 py-1 bg-foreground/5 rounded text-xs font-medium truncate">
                                 {p.value}
                             </span>
                         </div>
@@ -235,12 +245,12 @@ const TransactionsTable = ({
                 headerName: "Aplicação",
                 field: "application",
                 suppressMovable: true,
-                minWidth: 110,
+                width: 120,
                 sortable: true,
                 cellRenderer: (p: ICellRendererParams) => {
                     return (
                         <div className="flex items-center justify-center h-full w-full">
-                            <span className="px-2 py-1 bg-foreground/5 rounded text-xs font-medium">
+                            <span className="px-2 py-1 bg-foreground/5 rounded text-xs font-medium truncate">
                                 {p.value}
                             </span>
                         </div>
@@ -266,7 +276,7 @@ const TransactionsTable = ({
                 headerName: "Valor",
                 field: "amount",
                 suppressMovable: true,
-                minWidth: 130,
+                width: 120,
                 sortable: true,
                 cellRenderer: (p: ICellRendererParams) => {
                     return (
@@ -280,7 +290,7 @@ const TransactionsTable = ({
                 headerName: "Taxa",
                 field: "fee",
                 suppressMovable: true,
-                minWidth: 110,
+                width: 100,
                 sortable: true,
                 cellRenderer: (p: ICellRendererParams) => {
                     return (
@@ -296,7 +306,7 @@ const TransactionsTable = ({
                 headerName: "Split",
                 field: "split",
                 suppressMovable: true,
-                minWidth: 110,
+                width: 100,
                 sortable: true,
                 cellRenderer: (p: ICellRendererParams) => {
                     return (
@@ -312,7 +322,7 @@ const TransactionsTable = ({
                 headerName: "Descrição",
                 field: "description",
                 flex: 1,
-                minWidth: 150,
+                minWidth: 120,
                 suppressMovable: true,
                 cellRenderer: (p: ICellRendererParams) => {
                     return (
@@ -343,7 +353,7 @@ const TransactionsTable = ({
                                     "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all",
                                     "bg-primary/10 text-primary hover:bg-primary/20",
                                     "disabled:opacity-50 disabled:cursor-not-allowed",
-                                    "focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    "focus:outline-none focus:ring-2 focus:ring-primary/50",
                                 )}
                                 title="Abrir comprovante em PDF"
                             >
