@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "./auth";
 import axios from "axios";
+import { unstable_cache } from "next/cache";
 
 export async function getIpWhitelist() {
     try {
@@ -12,13 +13,24 @@ export async function getIpWhitelist() {
             redirect("/login");
         }
 
-        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/ip`, {
-            headers: {
-                Authorization: `Bearer ${session.accessToken}`,
+        // Cache IP whitelist data for 60 seconds to reduce API calls
+        const getCachedIpWhitelist = unstable_cache(
+            async (accessToken: string) => {
+                const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/ip`, {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                });
+                return res.data;
             },
-        });
+            ["ip-whitelist"],
+            {
+                revalidate: 60, // Cache for 60 seconds
+                tags: ["ip-whitelist"],
+            }
+        );
 
-        return res.data;
+        return await getCachedIpWhitelist(session.accessToken);
     } catch (error) {
         if (
             axios.isAxiosError(error) &&
