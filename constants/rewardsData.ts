@@ -47,7 +47,7 @@ export const achvements = [
     },
     {
         name: "Montanha de Ouro",
-        description: "Alcanse R$ 10.000.000,00 em volume",
+        description: "Alcance R$ 10.000.000,00 em volume",
         completed: false,
     },
     {

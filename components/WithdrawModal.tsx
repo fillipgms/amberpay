@@ -84,7 +84,8 @@ const WithdrawModal = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [pixKeyInput, setPixKeyInput] = useState("");
     const [pixType, setPixType] = useState<PixKeyType>("unknown");
-    const [cryptoAmount, setCryptoAmount] = useState("");
+    const [cryptoDisplayValue, setCryptoDisplayValue] = useState("");
+    const [cryptoFloatValue, setCryptoFloatValue] = useState(0.0);
     const [pixError, setPixError] = useState<string | null>(null);
     const [pixResponse, setPixResponse] = useState<PixResponse | null>(null);
 
@@ -287,6 +288,30 @@ const WithdrawModal = () => {
         setPixKeyInput(formattedValue);
     };
 
+    const formatCryptoBRL = (value: string) => {
+        const numbers = value.replace(/\D/g, "");
+
+        if (!numbers) {
+            setCryptoDisplayValue("");
+            setCryptoFloatValue(0.0);
+            return;
+        }
+
+        const float = parseFloat(numbers) / 100;
+        setCryptoFloatValue(parseFloat(float.toFixed(2)));
+
+        const formatted = float.toLocaleString("pt-BR", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+
+        setCryptoDisplayValue(`R$ ${formatted}`);
+    };
+
+    const handleCryptoAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        formatCryptoBRL(e.target.value);
+    };
+
     // Animate crypto success message
     useEffect(() => {
         if (cryptoSuccess && cryptoSuccessRef.current) {
@@ -397,21 +422,21 @@ const WithdrawModal = () => {
                     setIsSubmitting(false);
                     return;
                 }
-                if (!cryptoAmount || parseFloat(cryptoAmount) <= 0) {
+                if (!cryptoFloatValue || cryptoFloatValue <= 0) {
                     setCryptoError("Informe um valor válido");
                     setIsSubmitting(false);
                     return;
                 }
 
-                const amount = parseFloat(cryptoAmount.replace(",", "."));
                 const res = await processCryptoWithdrawal(
-                    amount,
+                    cryptoFloatValue,
                     selectedWallet,
                 );
 
                 if (res.status === 200 && res.data.status === 1) {
                     setCryptoSuccess(res.data.msg);
-                    setCryptoAmount("");
+                    setCryptoDisplayValue("");
+                    setCryptoFloatValue(0.0);
                     setSelectedWallet(null);
 
                     refreshDashboard();
@@ -688,16 +713,11 @@ const WithdrawModal = () => {
                                                                 type="text"
                                                                 name="cryptoAmount"
                                                                 id="cryptoAmount"
-                                                                placeholder="0,00"
+                                                                placeholder="R$ 0,00"
                                                                 value={
-                                                                    cryptoAmount
+                                                                    cryptoDisplayValue
                                                                 }
-                                                                onChange={(e) =>
-                                                                    setCryptoAmount(
-                                                                        e.target
-                                                                            .value,
-                                                                    )
-                                                                }
+                                                                onChange={handleCryptoAmountChange}
                                                                 icon={
                                                                     <CurrencyCircleDollarIcon
                                                                         size={
@@ -712,7 +732,7 @@ const WithdrawModal = () => {
                                                     </div>
 
                                                     {cryptoQuote &&
-                                                        cryptoAmount && (
+                                                        cryptoFloatValue > 0 && (
                                                             <div className="mt-4 p-4 rounded-lg bg-primary/5 border border-primary/20">
                                                                 <div className="flex items-center justify-between text-sm mb-2">
                                                                     <span className="text-foreground/70">
@@ -735,12 +755,7 @@ const WithdrawModal = () => {
                                                                     </span>
                                                                     <span className="font-bold text-primary text-base">
                                                                         {(
-                                                                            parseFloat(
-                                                                                cryptoAmount.replace(
-                                                                                    ",",
-                                                                                    ".",
-                                                                                ),
-                                                                            ) /
+                                                                            cryptoFloatValue /
                                                                             cryptoQuote
                                                                                 .prices
                                                                                 .brl
@@ -783,7 +798,7 @@ const WithdrawModal = () => {
                                                 disabled={
                                                     isSubmitting ||
                                                     !selectedWallet ||
-                                                    !cryptoAmount ||
+                                                    cryptoFloatValue <= 0 ||
                                                     cryptoWallets.length === 0
                                                 }
                                                 className="w-full cursor-pointer"

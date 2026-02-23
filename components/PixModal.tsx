@@ -101,7 +101,7 @@ const PixModal = ({ pixKey, response }: PixModalProps) => {
         <Credenza open={isOpen} onOpenChange={handleOpenChange}>
             <CredenzaContent className="max-w-2xl">
                 <CredenzaHeader>
-                    <CredenzaTitle>Realizando Transaferência Pix</CredenzaTitle>
+                    <CredenzaTitle>Realizando Transferência Pix</CredenzaTitle>
                 </CredenzaHeader>
                 <CredenzaBody>
                     <ScrollArea>

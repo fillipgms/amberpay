@@ -30,7 +30,7 @@ export default function LoginPage() {
                     </div>
                     <div>
                         <h1 className="text-xl">Boas Vindas de Volta!</h1>
-                        <p className="text-foreground/50">Bem Te Ver Denono</p>
+                        <p className="text-foreground/50">Bom te ver denovo</p>
                     </div>
 
                     <LoginSelectorContainer>

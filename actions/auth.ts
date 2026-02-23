@@ -29,12 +29,10 @@ export async function logIn(formData: FormData) {
             },
         );
 
-        // Check if response indicates successful login (status: true or status: 200)
         if (
             (res.status === 200 && res.data.token) ||
             (res.data.status && res.data.token)
         ) {
-            // Case 1: First time 2FA setup (has QR code)
             if (res.data.qrcode && res.data.qrcode !== null) {
                 return {
                     success: true,
@@ -46,7 +44,6 @@ export async function logIn(formData: FormData) {
                 };
             }
 
-            // Case 2: 2FA is already set up, just needs code verification
             if (res.data.msg === "login_not_passed") {
                 return {
                     success: true,
@@ -81,7 +78,7 @@ export async function logIn(formData: FormData) {
             return {
                 success: false,
                 message:
-                    error.response.data?.message || "Email ou Senha inválidos.",
+                    error.response.data?.msg || "Email ou Senha inválidos.",
             };
         }
 
@@ -271,6 +268,8 @@ export async function VerifySession() {
 
 export async function register(formData: FormData) {
     try {
+        console.log(formData);
+
         const res = await axios.post(
             `${process.env.NEXT_PUBLIC_API_URL}/register`,
             formData,
